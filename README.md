@@ -1,6 +1,14 @@
 # SmartCash AI: Next-Gen Cash Application Engine 🚀
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_svg.svg)](https://smartcash-ai-ezywbepvihp9bnvqgndwrb.streamlit.app/)
+---
+
+## 🌐 Live Demo
+### [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_svg.svg)](https://smartcash-ai-ezywbepvihp9bnvqgndwrb.streamlit.app/) 
+> **Click the badge above or use the direct link below:**
+> 
+> 🔗 **[Explore SmartCash AI Live Dashboard](https://smartcash-ai-ezywbepvihp9bnvqgndwrb.streamlit.app/)**
+
+---
 
 **SmartCash AI** is a high-performance automated cash application solution designed from a Product Manager’s perspective. It solves the "Black Box" problem of legacy tools like HighRadius by providing **Explainable AI Matching**, **Real-time Metrics**, and a **Human-in-the-Loop Analyst Workbench**.
 
