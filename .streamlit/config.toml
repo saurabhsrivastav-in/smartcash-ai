@@ -1,0 +1,16 @@
+[theme]
+primaryColor = "#007bff"     # Fintech Blue
+backgroundColor = "#0e1117"  # Professional Dark Grey
+secondaryBackgroundColor = "#1c2128"
+textColor = "#ffffff"
+font = "sans serif"
+
+[server]
+# Optimizes for deployment on Streamlit Cloud
+enableCORS = false
+enableXsrfProtection = true
+maxUploadSize = 50
+
+[browser]
+# Removes the "Made with Streamlit" footer for a professional white-label feel
+gatherUsageStats = false
