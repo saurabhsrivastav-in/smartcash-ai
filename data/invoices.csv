@@ -1,1 +1,9 @@
-# Mock CSVs of Invoices/Payments
+Invoice_ID,Customer,Amount,Due_Date,ESG_Score,Risk_Level,Status
+INV-2026-001,Tesla Motors,50000.00,2026-02-15,AAA,Low,Open
+INV-2026-002,Global Blue Ltd,1250.00,2026-02-10,B,High,Open
+INV-2026-003,Saurabh Soft,890.00,2026-03-01,A+,Medium,Open
+INV-2026-004,Tech Retail Corp,3200.00,2026-01-20,A,Low,Open
+INV-2026-005,Eco Energy Systems,15000.00,2026-02-28,AA,Low,Open
+INV-2026-006,Alpha Logistics,450.50,2026-02-05,C,High,Open
+INV-2026-007,Quantum Dynamics,12000.00,2026-03-15,A,Medium,Open
+INV-2026-008,Zylos Manufacturing,2750.00,2026-01-25,B+,Medium,Open
