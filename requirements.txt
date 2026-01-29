@@ -1,16 +1,23 @@
-# --- Data Handling ---
-pandas==2.2.0        # The "Excel" of Python
-numpy==1.26.0         # Vectorized math for amount matching
+# --- Core Data Orchestration ---
+pandas==2.2.0            # High-performance data structures and analysis
+numpy==1.26.0             # Support for large, multi-dimensional arrays and math
+python-dateutil==2.8.2    # Robust parsing of inconsistent financial date formats
 
-# --- AI & Reconciliation Logic ---
-scikit-learn          # For vectorizing text/customer names
-thefuzz[speedup]      # Fuzzy string matching (crucial for "Tesla" vs "Tesla Inc")
-python-dateutil       # Advanced date parsing for due dates
+# --- AI & Heuristic Matching ---
+thefuzz[speedup]==0.20.0  # Fuzzy string matching for "Customer Name" normalization
+scikit-learn==1.4.0       # Machine learning tools for predictive matching scores
+openai==1.10.0            # Integration for GenAI remittance & email drafting
 
-# --- LLM Integration (Optional but recommended) ---
-openai                # If using GPT-4 to explain reconciliation gaps
-python-dotenv         # To load your secret API keys from .env
+# --- Security & Governance ---
+cryptography==42.0.0      # For PQC-ready encryption and secure data handling
+python-dotenv==1.0.0      # Management of sensitive API keys and SAP credentials
+hashlib                   # Standard library for SHA-256 Audit Trail hashing
 
-# --- Frontend/UI ---
-streamlit             # To build your dashboard instantly
-plotly                # For beautiful ESG risk charts
+# --- Frontend & Visualization ---
+streamlit==1.31.0         # Main UI framework for the Analyst Workbench
+plotly==5.18.0            # Interactive treasury and ESG risk visualizations
+st-annotated-text         # Custom UI components for highlighting matches
+
+# --- ERP & Connectivity ---
+requests==2.31.0          # API calls to SAP OData/Rest services
+# pyrfc                   # (Optional) Direct SAP RFC connection - requires SAP NW RFC SDK
