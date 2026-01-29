@@ -1,1 +1,6 @@
-# Dependencies
+fastapi
+uvicorn
+streamlit
+fuzzywuzzy
+python-Levenshtein
+requests
