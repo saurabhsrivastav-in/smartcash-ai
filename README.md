@@ -2,22 +2,12 @@
 
 ---
 
-## 🌐 Live Demo
-### [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_svg.svg)](https://smartcash-ai-ezywbepvihp9bnvqgndwrb.streamlit.app/) 
-> **Click the badge above or use the direct link below:**
-> 
-> 🔗 **[Explore SmartCash AI Live Dashboard](https://smartcash-ai-ezywbepvihp9bnvqgndwrb.streamlit.app/)**
-
----
-
 **SmartCash AI** is a high-performance automated cash application solution designed from a Product Manager’s perspective. It solves the "Black Box" problem of legacy tools like HighRadius by providing **Explainable AI Matching**, **Real-time Metrics**, and a **Human-in-the-Loop Analyst Workbench**.
 
----
 
-## 🔗 Live Demo
+## 🌐 Live Demo
 **Access the live application here:** [SmartCash AI Dashboard](https://smartcash-ai-ezywbepvihp9bnvqgndwrb.streamlit.app/)
 
----
 
 ## 💡 The Value Proposition (PM Perspective)
 Traditional Cash App tools often fail during "The Remittance Gap"—where payment data is messy or incomplete. SmartCash AI achieves a **95% Straight-Through Processing (STP) rate** by focusing on:
@@ -33,4 +23,7 @@ Traditional Cash App tools often fail during "The Remittance Gap"—where paymen
 - **Executive Insights:** Real-time tracking of Unapplied Cash and STP trends.
 
 ## 🚀 Technical Stack
-- **Frontend:** [Streamlit](https
+- **Frontend:** [Streamlit](https://streamlit.io/) (Finance-optimized UI)
+- **Backend:** Python / FastAPI (High-concurrency matching engine)
+- **Matching Logic:** FuzzyWuzzy (Levenshtein Distance) & Numeric Validation
+- **Deployment:** Streamlit Cloud
