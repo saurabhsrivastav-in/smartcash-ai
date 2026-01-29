@@ -64,21 +64,21 @@ st.sidebar.info(f"🟢 **System:** Operational\n\n📅 **Date:** {datetime.now()
 if menu == "Executive Dashboard":
     st.title("📊 Global Cash & Liquidity Position")
     
-    # --- Strategic KPIs Row (NEW) ---
+    # --- New Advanced Metrics (Strategic KPIs) ---
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("CEI Score", "89.4%", "+2.1%", help="Collection Effectiveness Index: Measures quality of collection process.")
-    m2.metric("WADD", "4.2 Days", "-1.1 Days", help="Weighted Average Days Delinquent: Volume-weighted impact of late payments.")
-    m3.metric("Cash Runway", "142 Days", "+12 Days", help="AI-driven estimate of liquidity based on historical burn/spend.")
-    m4.metric("AI Confidence Avg", "94.8%", "+0.5%", help="Average confidence score across all automated reconciliations.")
+    m1.metric("CEI Score", "89.4%", "+2.1%", help="Collection Effectiveness Index: Quality of collection process.")
+    m2.metric("WADD", "4.2 Days", "-1.1 Days", help="Weighted Average Days Delinquent: Volume-weighted impact of lateness.")
+    m3.metric("Cash Concentration", "Low", "Diversified", help="Counterparty risk level across portfolio.")
+    m4.metric("AI Confidence Avg", "94.8%", "+0.5%", help="Mean accuracy of autonomous matching engine.")
 
     st.divider()
 
-    # --- Trendy Visuals Section ---
-    c1, c2 = st.columns([2, 1])
+    # --- Liquidity Bridge & Exposure Section ---
+    c1, c2 = st.columns([1.5, 1])
 
     with c1:
-        st.subheader("📈 Liquidity Bridge (Waterfall)")
-        # Creating a trendy waterfall chart to show cash movement
+        st.subheader("📉 Liquidity Bridge (Monthly Cash Flow)")
+        # B. The Cash Flow Waterfall
         fig_waterfall = go.Figure(go.Waterfall(
             name = "Monthly Flow", orientation = "v",
             measure = ["relative", "relative", "total", "relative", "total"],
@@ -89,32 +89,34 @@ if menu == "Executive Dashboard":
             increasing = {"marker":{"color":"#2ea043"}},
             totals = {"marker":{"color":"#1f6feb"}}
         ))
-        fig_waterfall.update_layout(template="plotly_dark", height=400)
+        fig_waterfall.update_layout(template="plotly_dark", title="Cash Movement Analysis (USD)", height=450)
         st.plotly_chart(fig_waterfall, use_container_width=True)
 
     with c2:
-        st.subheader("🌍 Multi-Level Exposure")
-        # Trendy Sunburst Chart: Currency -> Customer -> ESG Rating
+        st.subheader("🌍 Multi-Level Exposure Sunburst")
+        # A. The Liquidity Sunburst
         fig_sun = px.sunburst(
             invoices, 
-            path=['Currency', 'ESG_Score'], 
+            path=['Currency', 'Customer', 'ESG_Score'], 
             values='Amount',
-            template="plotly_dark",
-            color_discrete_sequence=px.colors.qualitative.Pastel
+            color='ESG_Score',
+            color_discrete_map={'AAA':'#238636', 'AA':'#2ea043', 'B':'#d29922', 'C':'#f85149'},
+            template="plotly_dark"
         )
-        fig_sun.update_layout(height=400)
+        fig_sun.update_layout(height=450)
         st.plotly_chart(fig_sun, use_container_width=True)
 
     st.divider()
 
-    # Secondary Row: STP by Channel
-    st.subheader("⚡ STP Efficiency by Channel")
+    # STP Efficiency by Channel
+    st.subheader("⚡ STP Rate by Ingestion Channel")
     stp_data = pd.DataFrame({
         'Channel': ['Bank Feed (MT942)', 'Email (OCR)', 'Vendor Portal', 'Manual API'],
         'Efficiency': [98.2, 82.5, 91.0, 45.3]
     })
     fig_stp = px.bar(stp_data, x='Channel', y='Efficiency', color='Efficiency',
-                     color_continuous_scale='Greens', template="plotly_dark")
+                     color_continuous_scale='Greens', template="plotly_dark",
+                     title="Straight-Through Processing Accuracy")
     st.plotly_chart(fig_stp, use_container_width=True)
 
 # --- 6. ANALYST WORKBENCH ---
@@ -164,18 +166,29 @@ elif menu == "Analyst Workbench":
 elif menu == "Risk & Governance":
     st.title("🛡️ Institutional Risk & ESG Controls")
     
-    # Trendy Radar/Polar Chart for ESG Risk Distribution
-    st.subheader("📊 Portfolio ESG Risk Radar")
-    risk_counts = invoices['ESG_Score'].value_counts().reset_index()
-    fig_radar = px.line_polar(risk_counts, r='count', theta='ESG_Score', line_close=True,
-                              template="plotly_dark", color_discrete_sequence=['#238636'])
-    fig_radar.update_traces(fill='toself')
+    # C. The ESG Risk Radar
+    st.subheader("📊 Portfolio Health: ESG Risk Radar")
+    categories = ['AAA', 'AA', 'A', 'B', 'C', 'D']
+    fig_radar = go.Figure()
+    fig_radar.add_trace(go.Scatterpolar(
+          r=[40, 30, 25, 10, 5, 2],
+          theta=categories,
+          fill='toself',
+          name='Portfolio Risk',
+          marker=dict(color='#238636')
+    ))
+    fig_radar.update_layout(
+        polar=dict(radialaxis=dict(visible=True, gridcolor="#30363d")),
+        template="plotly_dark",
+        height=500
+    )
     st.plotly_chart(fig_radar, use_container_width=True)
 
     g1, g2 = st.columns(2)
     with g1:
         st.subheader("🛑 ESG Compliance Violations")
         risk_clients = invoices[invoices['ESG_Score'].isin(['D', 'E'])]
+        st.error(f"{len(risk_clients)} High-Risk Entities Flagged")
         st.dataframe(risk_clients[['Invoice_ID', 'Customer', 'Amount', 'ESG_Score']], hide_index=True)
         
     with g2:
