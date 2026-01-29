@@ -1,77 +1,77 @@
-# 🚀 Go-Live Checklist: SmartCash AI
+# 🚀 Go-Live Checklist: SmartCash AI Deployment
 
-**Project:** SmartCash AI Automation Deployment  
-**Release Version:** v1.0.0 (Global Enterprise Edition)  
+**Project:** SmartCash AI Automation: Next-Gen Treasury Cutover  
+**Release Version:** v1.0.0-PROD (Enterprise Build)  
 **Deployment Date:** January 2026  
 **Owner:** Saurabh Srivastav, Product Manager  
 
 ---
 
 ## 1. Pre-Deployment (T-minus 72 Hours)
-Ensure the foundation is stable before the final cutover.
+*Foundational stability and data integrity checks.*
 
-- [ ] **Data Sanitization:** Verify all "Test/Dummy" data is purged from the production database.
-- [ ] **Infrastructure Freeze:** No further code changes to the Main branch.
-- [ ] **Environment Sync:** Confirm Production environment variables match Staging (API Keys, Endpoints).
-- [ ] **Backup Verification:** Perform a full backup of the existing SAP AR tables and the SmartCash DB.
+- [ ] **Data Sanitization:** Purge all "Test/Dummy" rows from `data/invoices.csv` and `data/bank_feed.csv`.
+- [ ] **Infrastructure Freeze:** GitHub `main` branch locked; no further commits allowed without emergency CAB approval.
+- [ ] **Environment Secret Audit:** Confirm `.env` variables (SAP BAPI credentials, OpenAI API keys) are moved to the Secure Secret Manager.
+- [ ] **Backup Verification:** Execute a full snapshot of existing SAP AR tables (BSIK/BSID) and the Python local database.
 
 ---
 
 ## 2. Technical Cutover (T-minus 24 Hours)
-The "Heavy Lifting" of system integration.
-
-- [ ] **SFTP Connectivity:** Final handshake test between the Bank’s SFTP and Treasury IT.
-- [ ] **API Key Rotation:** Rotate all temporary UAT keys to Production-grade Secret Keys.
-- [ ] **SSL/TLS & Security:** Verify that the `https://` certificate for the Vendor Portal is active and PQC encryption is enabled.
-- [ ] **Load Balancing:** Confirm the cloud environment is configured to auto-scale for the first 48 hours of high-volume ingestion.
+*Establishing the plumbing between the bank and the engine.*
 
 
+
+- [ ] **MT942 SFTP Handshake:** Verify Treasury IT can pull the 4x daily SWIFT files without authentication latency.
+- [ ] **SSL/TLS & PQC:** Confirm the `https` certificate is active; verify Post-Quantum Cryptography (PQC) encryption for vendor data.
+- [ ] **Docker / Cloud Scale:** Confirm the container orchestration (Kubernetes/ECS) is set to 3x redundancy for the launch window.
+- [ ] **Persistence Layer:** Verify the "SOC2 Compliance Vault" has write-permissions for the production logs.
 
 ---
 
 ## 3. Production Launch (Day 0: Go-Live)
-The sequence of events for the launch window.
+*The critical path for the launch window.*
 
 ### Phase A: Data Ingestion (09:00 AM)
-- [ ] **MT942 Trigger:** Activate the first intraday bank file ingestion.
-- [ ] **OCR Engine:** Start the email listener for the Centralized Remittance Mailbox.
-- [ ] **SAP Sync:** Initialize the full pull of Open Items (Receivables) into the SmartCash matching pool.
+- [ ] **MT942 Pulse:** Trigger the first intraday bank file ingestion (Scenario: Morning Credit Sweep).
+- [ ] **Remittance Listener:** Activate the Python `imap` listener for the Centralized Remittance Mailbox.
+- [ ] **Inflow Sync:** Pull the 1,000+ most recent open items from SAP into the `SmartMatchingEngine`.
 
 ### Phase B: Processing & Matching (11:00 AM)
-- [ ] **The "First Run":** Monitor the first 100 transactions for STP (Straight-Through Processing) accuracy.
-- [ ] **Fuzzy Logic Check:** Verify that "Scenario B" (Bulk) and "Scenario C" (Part-pay) logic gates are firing correctly.
-- [ ] **Write-back Activation:** Enable the BAPI connector to post the first batch of "Auto-Matches" to the GL.
-
-
+- [ ] **STP Benchmark:** Monitor the first 100 transactions; target >90% Straight-Through Processing accuracy.
+- [ ] **Fuzzy Logic Validation:** Review "TheFuzz" scores on the first 10 matches to ensure no false positives.
+- [ ] **BAPI Write-back:** (CRITICAL) Enable the SAP connector to post the first batch of auto-matches to the GL.
 
 ---
 
 ## 4. Organizational Readiness
-The human element of the transition.
+*Ensuring the team can drive the new system.*
 
-- [ ] **User Training:** Confirm all AR Analysts have completed the "Analyst Workbench" certification.
-- [ ] **Support Desk:** Ensure the IT Support team has the "SmartCash Troubleshooting Guide" and escalation contacts.
-- [ ] **Vendor Portal Launch:** Send the "Welcome & Registration" emails to the Top 50 high-volume customers.
+
+
+- [ ] **Analyst Certification:** Confirm all 15 AR Analysts have passed the "Workbench Exception Handling" simulation.
+- [ ] **Support Escalation:** Distribute the "SmartCash Troubleshooting Matrix" to the Tier-1 Helpdesk.
+- [ ] **Customer Communication:** Deploy the registration emails to the Top 50 Strategic Partners for the new Vendor Portal.
 
 ---
 
 ## 5. Post-Launch Monitoring (T-plus 48 Hours)
-Hyper-care period for the first two business days.
+*Hyper-care and performance auditing.*
 
-- [ ] **Hourly Status Reports:** Send an automated summary of "Processed vs. Exceptions" to the Project Steering Committee.
-- [ ] **Latency Audit:** Verify the Dashboard response time remains <2.0s under full load.
-- [ ] **Audit Trail Integrity:** Confirm the Hashed Audit Log (Sprint 9) is recording every transaction without gaps.
+- [ ] **SteerCo Reporting:** Hourly automated summaries of "Auto-Matched vs. Manual Exceptions" sent via Slack/Email.
+- [ ] **Latency Audit:** Ensure the Executive Dashboard (Plotly/Streamlit) loads in <1.5s under concurrent user load.
+- [ ] **Audit Integrity:** Verify the Hashed Audit Ledger is immutable and recording all "Scenario D" exceptions.
 
 ---
 
 ## 6. Contingency / Rollback Plan
-In the event of a "Critical" failure during cutover.
+*Emergency protocols for unexpected system failure.*
 
 | Trigger Event | Action | Responsibility |
 | :--- | :--- | :--- |
-| **SAP Posting Failure** | Disable SAP Write-back; revert to manual GL entry via legacy CSV export. | SAP IT Lead |
-| **MT942 Data Corruption** | Roll back to the previous day’s bank file and re-run ingestion. | Treasury IT |
-| **System Downtime > 1hr** | Redirect all users to the "Read-Only" legacy AR report. | DevOps |
+| **BAPI Posting Error** | Kill SAP Write-back; switch to "Offline Reconciliation" mode. | SAP IT Lead |
+| **OCR Failure > 20%** | Revert to manual attachment viewing; disable auto-scrape. | AI Team Lead |
+| **Data Mismatch** | Full System Pause; Rollback to T-minus 24h Backup. | DevOps Lead |
 
 ---
 
@@ -79,6 +79,6 @@ In the event of a "Critical" failure during cutover.
 
 | Authority | Decision | Signature | Time |
 | :--- | :--- | :--- | :--- |
-| **Saurabh Srivastav** | [ ] GO [ ] NO-GO | ________________ | ________ |
-| **Technical Lead** | [ ] GO [ ] NO-GO | ________________ | ________ |
-| **Operations VP** | [ ] GO [ ] NO-GO | ________________ | ________ |
+| **Saurabh Srivastav (PM)** | [ ] GO [ ] NO-GO | ________________ | ________ |
+| **Technical Architect** | [ ] GO [ ] NO-GO | ________________ | ________ |
+| **Head of Treasury Ops** | [ ] GO [ ] NO-GO | ________________ | ________ |
