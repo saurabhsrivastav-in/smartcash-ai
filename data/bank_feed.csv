@@ -1,0 +1,7 @@
+Bank_TX_ID,Payer_Name,Amount_Received,Bank_Reference,Currency
+TXN-101,Tesla Motors,50000.00,INV-2026-001 SETTLEMENT,USD
+TXN-102,Globel Blue,1250.00,PYMNT 002,USD
+TXN-103,Saurabh Softwares,890.00,INV-003,USD
+TXN-104,Tech Retail,3100.00,PARTIAL PYMT,USD
+TXN-105,Eco Energy,15000.00,E-ENERGY_005,USD
+TXN-106,Alpa Logistics,400.00,SHORT PAY,USD
