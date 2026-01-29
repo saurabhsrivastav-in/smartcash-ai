@@ -1,98 +1,103 @@
-# PRD: SmartCash AI Matching Engine
+# 🏦 Product Requirement Document (PRD): SmartCash AI
 
-**Product Manager:** Saurabh Srivastav
-
-**Status:** In-Development
-
-**Target Release:** Q1 2026 (Phase 1)
-
-**Tracking Link:** [Live Demo](https://smartcash-ai-ezywbepvihp9bnvqgndwrb.streamlit.app/)
+**Author:** Saurabh Srivastav  
+**Version:** 1.0 (Production-Ready)  
+**Status:** In-Development / Live Demo  
+**Live Application:** [View SmartCash AI Dashboard](https://smartcash-ai-ezywbepvihp9bnvqgndwrb.streamlit.app/)
 
 ---
 
-## 1. Goal & Vision
+## 1. Executive Summary & Vision
+**SmartCash AI** is an autonomous Order-to-Cash (O2C) orchestration layer designed to eliminate "The Remittance Gap." By leveraging Fuzzy Logic, GenAI, and Blockchain-verified audit trails, the system transforms manual bank reconciliation into an **Exception-Only** management workflow.
 
-To transform the manual "centralized mailbox" reconciliation into an **Autonomous Cash Application** system. We will move from manual data entry to "Exception-Only" management, targeting a **95% Straight-Through Processing (STP)** rate for all inbound cash.
-
----
-
-## 2. User Personas
-
-* **AR Analyst (Primary):** Needs a prioritized worklist to resolve "Suggested Matches" and code deductions.
-* **Treasury IT Manager:** Needs reliable MT942 data ingestion pipelines.
-* **CFO:** Needs real-time visibility into "Unapplied Cash" and DSO metrics.
+**Vision:** To achieve a **95% Straight-Through Processing (STP)** rate, reducing DSO and freeing finance teams from repetitive data entry.
 
 ---
 
-## 3. Functional Specifications
+## 2. Problem Statement
+Manual cash application in SAP ERP environments is plagued by:
+* **Dirty Data:** Bank remittance info (Tag 86) rarely matches SAP Invoice IDs exactly.
+* **Volume Peaks:** Month-end transaction surges lead to delayed revenue recognition.
+* **Unapplied Cash:** Millions in "lost" liquidity due to unidentified payments.
 
-### 3.1 Data Pipeline & Ingestion (The "Input")
 
-The system must act as a data aggregator for the following sources:
-
-| Feature ID | Feature Name | Specification |
-| --- | --- | --- |
-| **P-1.1** | MT942 Parser | System must pull bank files 4x daily (09:00, 12:00, 15:00, 18:00). It must parse SWIFT Tag 61 (Amounts) and Tag 86 (Unstructured Remittance Info). |
-| **P-1.2** | Multi-Channel OCR | Utilize Layout-aware AI to extract Invoice numbers, Net amounts, and Tax amounts from PDF attachments and email bodies. |
-| **P-1.3** | SAP Linkage | Query SAP API for Open Receivables (Table BSID/BSAD) to create a real-time "Matching Pool." |
-
-### 3.2 The Matching Logic (The "Brain")
-
-Matches are processed through a "Waterfall" logic:
-
-1. **Level 1: Exact Match:** `Bank_Amount = Invoice_Amount` AND `Bank_Ref = Invoice_ID`. (Status: **Auto-Post**)
-2. **Level 2: Fuzzy Match:** Customer name similarity >90% AND `Amount` matches. (Status: **Suggested**)
-3. **Level 3: Many-to-One:** One bank credit matches the sum of 2+ open invoices for the same customer. (Status: **Suggested**)
-4. **Level 4: Short-Pay Logic:** Match found but `Bank_Amount < Invoice_Amount`. (Status: **Exception - Action Required**)
-
-### 3.3 Analyst Workbench (The "UI")
-
-* **Prioritized View:** Instead of a first-in-first-out list, tasks are sorted by `Invoice Value` and `Customer Risk Score`.
-* **Action Buttons:** One-click "Approve Match," "Request Info," and "Post to Account."
-* **Deduction Coder:** If a short-pay is identified, the UI must provide a dropdown for **Reason Codes** (e.g., ZF01: Damaged Goods, ZF02: Cash Discount).
 
 ---
 
-## 4. User Experience (UX) & Design
+## 3. User Personas
 
-* **Dashboard Logic:**
-* **Green (STP):** Successfully matched and queued for SAP GL update.
-* **Yellow (Action):** High confidence match found, requires one-click analyst approval.
-* **Red (Exception):** No match found; requires manual investigation or dunning trigger.
+| Persona | Pain Point | Success Metric |
+| :--- | :--- | :--- |
+| **AR Analyst** | Spending 4+ hours/day on manual Excel lookups. | Payments processed per hour. |
+| **CFO** | High DSO and lack of real-time cash visibility. | DSO Reduction (Days). |
+| **Treasury IT** | Complex integration between SWIFT and SAP. | System Uptime & API Latency. |
+
+---
+
+## 4. Functional Specifications
+
+### 4.1 Data Pipeline & Ingestion (FR1)
+The system acts as a real-time aggregator for global financial feeds.
+
+* **MT942 Parser:** Autonomous ingestion of SWIFT Intraday reports, parsing Tag 61 (Value Dates) and Tag 86 (Unstructured Text).
+* **Multi-Channel OCR:** Layout-aware AI to extract metadata from PDF/Email remittance advices.
+* **SAP Linkage:** Bidirectional integration with SAP (Tables BSID/BSAD) to maintain a live "Matching Pool."
+
+### 4.2 The "Waterfall" Matching Engine (FR2 & FR3)
+Logic cascades through four gates to ensure maximum automation with zero risk.
+
+1.  **Level 1 (Exact):** `Bank_Amt == Inv_Amt` AND `Ref == Inv_ID`. **(Action: Auto-Post)**
+2.  **Level 2 (Fuzzy):** Customer Name similarity > 90% via Levenshtein distance. **(Action: Suggested)**
+3.  **Level 3 (Collective):** Sum of multiple Open Invoices matches one Bank Credit. **(Action: Suggested)**
+4.  **Level 4 (Short-Pay):** Valid match found with partial payment. **(Action: Trigger Dispute Agent)**
 
 
-* **Latency:** All dashboard interactions (filtering/sorting) must respond in **<1.5 seconds**.
+
+### 4.3 GenAI & Dispute Management (FR4)
+When Level 4 logic is triggered, the **GenAI Agent** (GPT-4/Gemini) performs:
+* **Contextual Analysis:** Determines if the variance is a bank fee, tax, or dispute.
+* **Autonomous Correspondence:** Drafts a personalized email to the customer's AP department requesting remittance details.
 
 ---
 
 ## 5. Non-Functional Requirements (NFRs)
 
-* **Scalability:** The engine must handle up to **50,000 line items per hour** during month-end peaks.
-* **Auditability:** Every match (Auto or Manual) must have an audit log: `User_ID`, `Timestamp`, `Algorithm_Confidence`, and `Reason_Code`.
-* **Security:** SOC2 Type II compliance. Payment data must be masked where PCI-DSS applies.
+* **Auditability (FR5):** Every transaction must generate a SHA-256 hash, creating an immutable audit trail for external auditors.
+* **Security:** AES-256 encryption for data at rest; PQC-ready (Post-Quantum Cryptography) logic for data in transit.
+* **Scalability:** Horizontal scaling to process **50,000 items/hour**.
+* **Performance:** UI interactions must maintain a latency of **<1.5s**.
 
 ---
 
 ## 6. Success Metrics (KPIs)
 
-* **Match Rate:** % of payments auto-posted without human touch (Target: 85%).
-* **DSO (Days Sales Outstanding):** Goal to reduce from current average to -5 days by Q4.
-* **Analyst Throughput:** Increase number of payments processed per hour per head by 400%.
+| Metric | Baseline | Target (Q4 2026) |
+| :--- | :--- | :--- |
+| **STP Rate** | 40% (Manual) | **85% - 95%** |
+| **DSO Reduction** | 35 Days | **-5 Days** |
+| **Analyst Capacity** | 50 Postings/Day | **250+ Postings/Day** |
 
 ---
 
-## 7. Implementation Roadmap (Technical View)
+## 7. Implementation Roadmap
 
-* **Sprint 1-4 (Foundation):** MT942 Parsing, SAP Read-only API, Exact Match Logic.
-* **Sprint 5-8 (Intelligence):** OCR Engine for PDF Remittance, Fuzzy Logic, Deduction Coder UI.
-* **Sprint 9-12 (Scale):** AI-Prioritization, Automated SAP Write-back (GL Clearing), Dunning integration.
+### Phase 1: Foundation (Sprint 1-4)
+* Connectivity: MT942 Parsing & SAP Read-only API.
+* Core: Level 1 & 2 Waterfall logic.
+
+### Phase 2: Intelligence (Sprint 5-8)
+* AI Agent: GenAI Email drafting and Deduction coding.
+* UI: Analyst Workbench & Executive Dashboard.
+
+### Phase 3: Autonomous Scale (Sprint 9-12)
+* Compliance: Blockchain Audit Logs.
+* Treasury: CBDC Atomic Settlement and Liquidity Sweeps.
 
 ---
 
 ## 8. Exception Handling & Edge Cases
-
-* **Duplicate Remittance:** System must flag if the same bank reference ID is ingested twice.
-* **Currency Mismatch:** If a payment is in EUR but the invoice is in USD, the system must pull the midday exchange rate for variance calculation.
-* **Overpayments:** Any payment exceeding invoice amount must be flagged for "Customer Credit Memo" creation.
+* **Currency Variance:** Midday FX rate pull for cross-currency matching.
+* **Overpayments:** Trigger "Unapplied Credit" workflow in SAP.
+* **Duplicate Detection:** Hash-checking Bank Transaction IDs to prevent double-posting.
 
 ---
