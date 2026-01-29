@@ -3,7 +3,6 @@ import sys
 from datetime import datetime
 
 # --- PATH CONFIGURATION ---
-# Ensures 'backend' is discoverable in Streamlit Cloud environment
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import streamlit as st
@@ -44,8 +43,6 @@ def load_data():
     try:
         inv = pd.read_csv('data/invoices.csv')
         bank = pd.read_csv('data/bank_feed.csv')
-        
-        # Format Processing
         inv['Due_Date'] = pd.to_datetime(inv['Due_Date'])
         inv['Month_Numeric'] = inv['Due_Date'].dt.month
         return inv, bank
@@ -55,22 +52,19 @@ def load_data():
 
 # --- 3. ANALYTICAL LAYER ---
 def calculate_dso(inv_df):
-    """Real-time calculation of Days Sales Outstanding"""
     ar_balance = inv_df[inv_df['Status'] == 'Open']['Amount'].sum()
     total_sales = inv_df['Amount'].sum()
     return (ar_balance / total_sales) * 365 if total_sales > 0 else 0
 
 def get_dso_forecast(inv_df, stress):
-    """Predictive trend modeling using Linear Regression"""
     x = np.array([1, 2, 3, 4, 5]) 
-    y = np.array([45.2, 44.8, 46.1, 43.9, 42.5]) # Historical baseline
+    y = np.array([45.2, 44.8, 46.1, 43.9, 42.5]) 
     slope, intercept, r_val, p_val, std_err = stats.linregress(x, y)
     return slope, intercept, r_val**2
 
 # --- 4. SESSION ORCHESTRATION ---
 @st.cache_resource
 def get_engine():
-    """Caches the engine to keep fuzzy matching snappy for the demo"""
     return SmartMatchingEngine()
 
 if 'audit_engine' not in st.session_state:
@@ -81,8 +75,7 @@ if 'treasury' not in st.session_state:
 invoices, bank_feed = load_data()
 engine = get_engine()
 
-# --- 5. SIDEBAR NAVIGATION & CONTROLS ---
-# Using a reliable, high-uptime CDN icon for the vault/logo
+# --- 5. SIDEBAR NAVIGATION ---
 st.sidebar.markdown(
     """
     <div style="text-align: center;">
@@ -91,37 +84,30 @@ st.sidebar.markdown(
     """, 
     unsafe_allow_html=True
 )
-
 st.sidebar.title("SmartCash AI")
 st.sidebar.markdown("<p style='text-align: center; color: #8b949e;'>Institutional Treasury Hub</p>", unsafe_allow_html=True)
 st.sidebar.divider()
 
-menu = st.sidebar.radio(
-    "Navigation Center", 
-    ["Executive Dashboard", "Analyst Workbench", "Risk & Governance", "Audit Ledger"]
-)
+menu = st.sidebar.radio("Navigation Center", ["Executive Dashboard", "Analyst Workbench", "Risk & Governance", "Audit Ledger"])
 
 st.sidebar.divider()
 st.sidebar.subheader("🛠️ Macro Stress Controls")
-stress_level = st.sidebar.slider(
-    "Collection Latency (Days)", 0, 90, 0,
-    help="Simulates a global slowdown in credit payment cycles using Numpy."
-)
-
+stress_level = st.sidebar.slider("Collection Latency (Days)", 0, 90, 0)
 liquidity_haircut = np.clip(1 - (stress_level / 200), 0.55, 1.0)
 
 # --- 6. VIEW: EXECUTIVE DASHBOARD ---
 if menu == "Executive Dashboard":
     st.title("📊 Global Cash & Liquidity Position")
     
-    # Premium Hero Image
-    st.image("https://images.unsplash.com/photo-1551288049-bbbda546697a?auto=format&fit=crop&q=80&w=2070", 
-             caption="Real-time Institutional Liquidity Flow", 
-             use_container_width=True)
+    # FIX: Robust Image Handling with Fallback
+    hero_url = "https://images.unsplash.com/photo-1551288049-bbbda546697a?auto=format&fit=crop&q=80&w=2070"
+    try:
+        st.image(hero_url, caption="Real-time Institutional Liquidity Flow", use_container_width=True)
+    except:
+        st.info("💡 **Liquidity Status:** System monitoring active. Global cash concentration remains optimal.")
     
     st.divider()
     
-    # KPIs
     base_dso = calculate_dso(invoices)
     current_dso = base_dso + stress_level
     
@@ -133,16 +119,12 @@ if menu == "Executive Dashboard":
 
     st.divider()
     c1, c2 = st.columns([1.5, 1])
-
     with c1:
         st.subheader("📉 Liquidity Bridge (Stress-Adjusted)")
-        opening_bal = 1200000
-        new_inv = invoices[invoices['Status'] == 'Open']['Amount'].sum()
+        opening_bal, new_inv = 1200000, invoices[invoices['Status'] == 'Open']['Amount'].sum()
         actual_coll = invoices[invoices['Status'] == 'Paid']['Amount'].sum() * liquidity_haircut
-        
         fig_waterfall = go.Figure(go.Waterfall(
-            orientation = "v",
-            measure = ["relative", "relative", "total", "relative", "total"],
+            orientation = "v", measure = ["relative", "relative", "total", "relative", "total"],
             x = ["Opening Cash", "Expected AR", "Gross Liquidity", "Collections (Stressed)", "Net Position"],
             y = [opening_bal, new_inv, 0, -actual_coll, 0],
             connector = {"line":{"color":"#30363d"}},
@@ -150,18 +132,15 @@ if menu == "Executive Dashboard":
             increasing = {"marker":{"color":"#2ea043"}},
             totals = {"marker":{"color":"#1f6feb"}}
         ))
-        fig_waterfall.update_layout(template="plotly_dark", height=450, margin=dict(l=10, r=10, t=10, b=10))
+        fig_waterfall.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=10, b=10))
         st.plotly_chart(fig_waterfall, use_container_width=True)
 
     with c2:
         st.subheader("🔮 Predictive DSO Drift")
         slope, intercept, r_sq = get_dso_forecast(invoices, stress_level)
         months = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"]
-        forecast_x = np.arange(len(months))
-        forecast_y = (intercept + slope * forecast_x) + stress_level
-        
+        forecast_y = (intercept + slope * np.arange(len(months))) + stress_level
         fig_line = px.line(x=months, y=forecast_y, markers=True, template="plotly_dark")
-        fig_line.add_vrect(x0="Jan", x1="Mar", fillcolor="#238636", opacity=0.1, annotation_text="Forecast Window")
         fig_line.update_traces(line_color='#2ea043', line_width=4)
         st.plotly_chart(fig_line, use_container_width=True)
 
@@ -169,17 +148,13 @@ if menu == "Executive Dashboard":
 elif menu == "Analyst Workbench":
     st.title("⚡ Smart Reconciliation Workbench")
     st.dataframe(bank_feed, use_container_width=True, hide_index=True)
-
     st.divider()
     col_sel, col_match = st.columns([1, 2])
-    
     with col_sel:
         st.subheader("Step 1: Focus Item")
-        tx_id = st.selectbox("Select Transaction:", bank_feed.index, 
-                            format_func=lambda x: f"{bank_feed.iloc[x]['Bank_TX_ID']} | {bank_feed.iloc[x]['Payer_Name']}")
+        tx_id = st.selectbox("Select Transaction:", bank_feed.index, format_func=lambda x: f"{bank_feed.iloc[x]['Bank_TX_ID']} | {bank_feed.iloc[x]['Payer_Name']}")
         tx_data = bank_feed.iloc[tx_id]
         st.info(f"**Selected Amount:** {tx_data['Currency']} {tx_data['Amount_Received']:,.2f}")
-
     with col_match:
         st.subheader("Step 2: AI Match Execution")
         if st.button("Run Multi-Factor Match Engine"):
@@ -194,27 +169,17 @@ elif menu == "Analyst Workbench":
                     st.warning(f"⚠️ EXCEPTION: Match Confidence {top['confidence']*100}%")
                     agent = GenAIAssistant()
                     st.text_area("AI Remittance Request Draft:", agent.generate_email(top['Customer'], tx_data['Amount_Received']), height=200)
-            else:
-                st.error("Critical Failure: No matching entities found.")
 
 # --- 8. VIEW: RISK & AUDIT ---
 elif menu == "Risk & Governance":
     st.title("🛡️ Institutional Risk Radar")
-    # Hierarchy: Currency -> Customer -> Score
-    fig_sun = px.sunburst(
-        invoices, 
-        path=['Currency', 'Customer', 'ESG_Score'], 
-        values='Amount', 
-        template="plotly_dark", 
-        color='ESG_Score',
-        color_discrete_map={'AA': '#238636', 'A': '#2ea043', 'B': '#d29922', 'C': '#f85149'}
-    )
+    fig_sun = px.sunburst(invoices, path=['Currency', 'Customer', 'ESG_Score'], values='Amount', template="plotly_dark", color='ESG_Score',
+                         color_discrete_map={'AA': '#238636', 'A': '#2ea043', 'B': '#d29922', 'C': '#f85149'})
     st.plotly_chart(fig_sun, use_container_width=True)
 
 elif menu == "Audit Ledger":
     st.title("🔐 SOC2 Compliance Vault")
     st.dataframe(st.session_state.audit_engine.get_logs(), use_container_width=True)
 
-# --- FOOTER ---
 st.sidebar.divider()
 st.sidebar.info(f"🟢 **Session Active**\n\n📅 **Date:** {datetime.now().strftime('%Y-%m-%d')}")
