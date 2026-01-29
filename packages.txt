@@ -1,2 +1,17 @@
+# --- Core Data Science Dependencies ---
 build-essential
 python3-dev
+
+# --- Database & Storage ---
+# Necessary if you plan to connect to PostgreSQL or SQL databases later
+libpq-dev
+
+# --- PDF & Document Parsing ---
+# Useful if you ever need to extract data from PDF invoices
+poppler-utils
+tesseract-ocr
+
+# --- Specialized Math/Optimization ---
+# Required for some high-performance matching algorithms
+gfortran
+libatlas-base-dev
