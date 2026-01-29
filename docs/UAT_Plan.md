@@ -1,90 +1,86 @@
 # User Acceptance Testing (UAT) Plan: SmartCash AI
 
 **Project:** SmartCash AI Automation (Sprints 1-12)  
-**Version:** 1.0  
+**Version:** 1.0.0-STAGING  
 **Lead QA/PM:** Saurabh Srivastav  
-**Last Updated:** January 2026
+**Status:** Open for SME Review  
 
 ---
 
 ## 1. Introduction
-The goal of this UAT is to ensure the SmartCash AI platform is functionally sound, secure, and ready for global autonomous operations. Testing will be performed by Subject Matter Experts (SMEs) from the Accounts Receivable (AR), Treasury, and IT Compliance teams.
+The UAT phase is the final validation gate before the "Atomic Settlement" release. This plan ensures that the **SmartCash AI** platform meets the complex needs of modern Treasury departments, specifically focusing on data integrity, SAP synchronization, and AI explainability.
 
 ---
 
 ## 2. UAT Scope & Strategy
-The testing is divided into **4 Strategic Pillars** matching the product evolution:
-1. **Connectivity & Core Matching** (Sprints 1-3)
-2. **AI Intelligence & Exception Management** (Sprints 4-6)
-3. **Governance & Predictive Analytics** (Sprints 7-9)
-4. **Autonomous Treasury & Agent Interaction** (Sprints 10-12)
+Testing follows the **"Four-Pillar Execution"** model to mirror the development lifecycle:
 
 
+
+1.  **Connectivity & Core Matching:** High-speed bank feed ingestion.
+2.  **AI Intelligence:** Accuracy of the LLM and Fuzzy Match algorithms.
+3.  **Governance & Analytics:** SOC2 compliance and risk visualizations.
+4.  **Autonomous Operations:** Hands-free clearing and Agent-to-Agent communication.
 
 ---
 
 ## 3. Test Scenarios & Acceptance Criteria
 
-### Pillar 1: Foundation (The "Plumbing")
-| Test Case ID | Scenario | Expected Result | Result (P/F) |
+### Pillar 1: Infrastructure & ERP Sync
+| ID | Scenario | Acceptance Criteria | Result (P/F) |
 | :--- | :--- | :--- | :--- |
-| **UAT-1.1** | Ingest Intraday MT942 file | Transactions appear in dashboard 4x daily without duplicates. | |
-| **UAT-1.2** | Exact Match (1:1) | If Invoice # and Amount match perfectly, system marks as "Auto-Post." | |
-| **UAT-1.3** | SAP Write-back | A matched transaction triggers a "Cleared" status in SAP GL via BAPI. | |
+| **UAT-1.1** | MT942 Intraday Feed | 4x daily bank files pull correctly without record duplication or "ghost" balances. | |
+| **UAT-1.2** | Multi-Currency Aggregation | Dashboard correctly converts GBP/EUR to USD base currency using real-time FX rates. | |
+| **UAT-1.3** | SAP BAPI Write-back | Successful matches in the UI trigger an immediate "Cleared" status in SAP FBL5N. | |
 
-### Pillar 2: Intelligence (The "Brain")
-| Test Case ID | Scenario | Expected Result | Result (P/F) |
+### Pillar 2: AI Accuracy & Edge Cases
+| ID | Scenario | Acceptance Criteria | Result (P/F) |
 | :--- | :--- | :--- | :--- |
-| **UAT-2.1** | OCR PDF Extraction | AI correctly identifies Invoice ID and Amount from a "messy" PDF. | |
-| **UAT-2.2** | Fuzzy Match Logic | System suggests a match for "Target Corp" vs "Target Store #102." | |
-| **UAT-2.3** | Short-Pay Coding | System forces an Analyst to enter a "Reason Code" before saving. | |
-| **UAT-2.4** | GenAI Email Draft | LLM drafts a contextually correct dispute email for a short-payment. | |
+| **UAT-2.1** | Messy Remittance OCR | AI extracts Invoice IDs from low-resolution PDF scans with >90% OCR accuracy. | |
+| **UAT-2.2** | Weighted Fuzzy Matching | System correctly identifies "Tesla Giga Berlin" as "Tesla Inc" via the Heuristic engine. | |
+| **UAT-2.3** | LLM Dispute Drafting | "Generate Email" button produces a professional, error-free draft with correct claim codes. | |
 
-### Pillar 3: Governance (The "Guardrails")
-| Test Case ID | Scenario | Expected Result | Result (P/F) |
-| :--- | :--- | :--- | :--- |
-| **UAT-3.1** | Blockchain Audit Log | Any manual change generates an immutable, hashed log entry. | |
-| **UAT-3.2** | ESG Score Filtering | Dashboard accurately labels "Sustainable Partners" based on API data. | |
-| **UAT-3.3** | PQC Encryption | Data-at-rest is encrypted using NIST-standard quantum-resistant keys. | |
 
-### Pillar 4: Autonomous Operations (The "North Star")
-| Test Case ID | Scenario | Expected Result | Result (P/F) |
+
+### Pillar 3: Security & Risk Controls
+| ID | Scenario | Acceptance Criteria | Result (P/F) |
 | :--- | :--- | :--- | :--- |
-| **UAT-4.1** | Zero-Touch Clearing | High-trust accounts clear 100% autonomously without human clicks. | |
-| **UAT-4.2** | A2A Negotiation | SmartCash AI communicates with a Customer's AP AI to resolve a PO mismatch. | |
-| **UAT-4.3** | Liquidity Sweep | Surplus cash is automatically "swept" to an investment account API. | |
+| **UAT-3.1** | Immutable Audit Trail | Attempting to edit a locked transaction log fails; SHA-256 hash remains consistent. | |
+| **UAT-3.2** | ESG Score Enforcement | System blocks "Auto-Post" for any counterparty with an ESG score below 'D'. | |
+| **UAT-3.3** | Role-Based Access (RBAC) | Analysts cannot view the "Executive Dashboard" unless granted 'Admin' status. | |
 
 ---
 
 ## 4. Defect Management Workflow
-All defects found during UAT must be logged in the repository "Issues" section with the following labels:
-* 🔴 **Critical:** Blocks legal/compliance requirements or financial posting.
-* 🟡 **Major:** Functional gap that requires a manual workaround.
-* 🔵 **Minor:** UI/UX enhancement or cosmetic fix.
+Every failed test must follow the **Defect Lifecycle** below:
 
 
 
----
-
-## 5. Environment & Tools
-* **Staging Environment:** SAP Sandbox (Mirror of Production).
-* **Data Sources:** Real MT942 bank logs (Anonymized) and 1,000+ Sample Invoices.
-* **Tools:** Streamlit (UI), Postman (API Testing), GitHub Actions (CI/CD).
+* 🔴 **Critical (Blocker):** Financial data corruption or SAP connection failure.
+* 🟡 **Major:** Core functionality (like OCR) failing on more than 20% of samples.
+* 🔵 **Minor:** Minor UI alignment issues or non-critical dashboard lag.
 
 ---
 
-## 6. UAT Sign-off Criteria
-The project will be certified for "Go-Live" only when:
-1. **100% of "Critical" and "Major" defects** are resolved and re-tested.
-2. **STP (Straight-Through Processing) Rate** is ≥ 85% in the simulation run.
-3. **Audit Trail** is verified as immutable by the Compliance Officer.
+## 5. Environment & Logistics
+* **ERP Sandbox:** SAP S/4HANA Staging Client (Client 300).
+* **Bank Data:** Anonymized MT942 production logs from Q4 2025.
+* **Documentation:** All test evidence (screenshots/logs) must be attached to the GitHub Issue.
 
 ---
 
-### Approval Signatures
+## 6. UAT Sign-off Thresholds
+For a **"GO"** decision, the following metrics must be satisfied:
+1.  **Defect Resolution:** 100% of Critical and Major defects closed.
+2.  **Matching Precision:** <0.1% false-positive rate on auto-posted transactions.
+3.  **Performance:** Dashboard load time <1.5 seconds for 10 concurrent users.
 
-| Stakeholder | Role | Signature | Date |
+---
+
+### Final Approval Authorization
+
+| Role | Name | Signature | Decision |
 | :--- | :--- | :--- | :--- |
-| **Saurabh Srivastav** | Product Manager | ________________ | |
-| **John Doe** | Head of Treasury | ________________ | |
-| **Jane Smith** | IT Compliance Officer | ________________ | |
+| **Product Owner** | Saurabh Srivastav | ________________ | [ ] GO [ ] NO-GO |
+| **Global Treasurer** | ________________ | ________________ | [ ] GO [ ] NO-GO |
+| **Compliance Officer** | ________________ | ________________ | [ ] GO [ ] NO-GO |
