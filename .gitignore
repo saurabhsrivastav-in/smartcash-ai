@@ -1,52 +1,34 @@
-# --- Python Specific ---
+# --- System / OS Files ---
+.DS_Store
+Thumbs.db
+
+# --- Python / Environment ---
+venv/
+.env
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
 
-# --- Environments ---
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# --- Streamlit Specific ---
-.streamlit/config.toml
-.streamlit/credentials.toml
-
-# --- Data & Logs ---
-*.log
+# --- Data & Finance (Protects your CSVs) ---
+# Keep the directory structure, but ignore the actual data files
 data/*.csv
-# If you want to keep your mock CSVs on GitHub, comment out the line above with a #
+data/*.xlsx
+data/*.json
 
-# --- OS Specific ---
-.DS_Store
-.DS_Store?
-._*
-Thumbs.db
-desktop.ini
+# If you want to keep specific sample files, uncomment below:
+# !data/sample_invoices.csv
 
-# --- IDE Specific ---
+# --- AI / Machine Learning ---
+.ipynb_checkpoints
+*.log
+models/
+*.pkl
+*.joblib
+
+# --- IDEs ---
 .vscode/
 .idea/
-*.swp
-*.swo
+
+# --- Temporary / Output ---
+output/
+temp/
