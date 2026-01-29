@@ -9,7 +9,7 @@
 
 
 ## 🌐 Live Demo
-**Access the live application here:** [SmartCash AI Dashboard](https://smartcash-ai-ezywbepvihp9bnvqgndwrb.streamlit.app/)
+**Access the live application here:** [SmartCash AI Dashboard](https://smartcash-ai-hsmgehy5g5fz5f3y75ymim.streamlit.app/)
 
 ---
 
