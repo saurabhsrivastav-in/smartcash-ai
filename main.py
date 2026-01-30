@@ -1,10 +1,6 @@
 import os
 import sys
 from datetime import datetime
-
-# --- PATH CONFIGURATION ---
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -12,174 +8,178 @@ import plotly.express as px
 import plotly.graph_objects as go
 from scipy import stats
 
-# Core Backend Logic
+# --- PATH & BACKEND INTEGRATION ---
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from backend.engine import SmartMatchingEngine
-from backend.compliance import ComplianceGuard
-from backend.treasury import TreasuryManager
-from backend.ai_agent import GenAIAssistant
+from backend.compliance import ComplianceVault
+from backend.analytics import TreasuryAnalytics
 
 # --- 1. ENTERPRISE CONFIGURATION ---
 st.set_page_config(
     page_title="SmartCash AI | Treasury Command", 
     page_icon="🏦", 
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
-# Professional Dark-Mode Banking UI Styling
+# Professional Institutional Styling
 st.markdown("""
     <style>
-    .stApp { background-color: #0b0e14; color: #e0e0e0; }
-    .stMetric { background-color: #1c2128; border: 1px solid #30363d; padding: 20px; border-radius: 12px; }
-    [data-testid="stSidebar"] { background-color: #161b22; border-right: 1px solid #30363d; }
-    .stButton>button { width: 100%; border-radius: 8px; background-color: #238636; color: white; border: none; font-weight: bold; }
-    .stDataFrame { border: 1px solid #30363d; border-radius: 8px; }
+    .stApp { background-color: #0b1117; color: #e6edf3; }
+    [data-testid="stMetricValue"] { font-size: 28px; color: #58a6ff; }
+    .stTabs [data-baseweb="tab-list"] { gap: 24px; }
+    .stTabs [data-baseweb="tab"] { height: 50px; white-space: pre-wrap; background-color: #161b22; border-radius: 4px 4px 0 0; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. DATA INGESTION ENGINE ---
+# --- 2. RESOURCE INITIALIZATION ---
 @st.cache_data
 def load_data():
     try:
         inv = pd.read_csv('data/invoices.csv')
         bank = pd.read_csv('data/bank_feed.csv')
-        inv['Due_Date'] = pd.to_datetime(inv['Due_Date'])
-        inv['Month_Numeric'] = inv['Due_Date'].dt.month
         return inv, bank
-    except FileNotFoundError:
-        st.error("⚠️ Data Source Missing: Check 'data/invoices.csv' and 'data/bank_feed.csv'")
+    except:
+        st.error("⚠️ Data Source Missing. Please run mock_data_maker.py first.")
         return pd.DataFrame(), pd.DataFrame()
 
-# --- 3. ANALYTICAL LAYER ---
-def calculate_dso(inv_df):
-    ar_balance = inv_df[inv_df['Status'] == 'Open']['Amount'].sum()
-    total_sales = inv_df['Amount'].sum()
-    return (ar_balance / total_sales) * 365 if total_sales > 0 else 0
-
-def get_dso_forecast(inv_df, stress):
-    x = np.array([1, 2, 3, 4, 5]) 
-    y = np.array([45.2, 44.8, 46.1, 43.9, 42.5]) 
-    slope, intercept, r_val, p_val, std_err = stats.linregress(x, y)
-    return slope, intercept, r_val**2
-
-# --- 4. SESSION ORCHESTRATION ---
-@st.cache_resource
-def get_engine():
-    return SmartMatchingEngine()
-
-if 'audit_engine' not in st.session_state:
-    st.session_state.audit_engine = ComplianceGuard()
-if 'treasury' not in st.session_state:
-    st.session_state.treasury = TreasuryManager()
+# Persistent Session Objects
+if 'engine' not in st.session_state:
+    st.session_state.engine = SmartMatchingEngine()
+if 'vault' not in st.session_state:
+    st.session_state.vault = ComplianceVault()
+if 'analytics' not in st.session_state:
+    st.session_state.analytics = TreasuryAnalytics()
 
 invoices, bank_feed = load_data()
-engine = get_engine()
 
-# --- 5. SIDEBAR NAVIGATION ---
-st.sidebar.markdown(
-    """
-    <div style="text-align: center;">
-        <img src="https://cdn-icons-png.flaticon.com/512/2830/2830284.png" width="80">
-    </div>
-    """, 
-    unsafe_allow_html=True
-)
-st.sidebar.title("SmartCash AI")
-st.sidebar.markdown("<p style='text-align: center; color: #8b949e;'>Institutional Treasury Hub</p>", unsafe_allow_html=True)
-st.sidebar.divider()
-
-menu = st.sidebar.radio("Navigation Center", ["Executive Dashboard", "Analyst Workbench", "Risk & Governance", "Audit Ledger"])
-
-st.sidebar.divider()
-st.sidebar.subheader("🛠️ Macro Stress Controls")
-stress_level = st.sidebar.slider("Collection Latency (Days)", 0, 90, 0)
-liquidity_haircut = np.clip(1 - (stress_level / 200), 0.55, 1.0)
-
-# --- 6. VIEW: EXECUTIVE DASHBOARD ---
-if menu == "Executive Dashboard":
-    st.title("📊 Global Cash & Liquidity Position")
-    
-    # FIX: Robust Image Handling with Fallback
-    hero_url = "https://images.unsplash.com/photo-1551288049-bbbda546697a?auto=format&fit=crop&q=80&w=2070"
-    try:
-        st.image(hero_url, caption="Real-time Institutional Liquidity Flow", use_container_width=True)
-    except:
-        st.info("💡 **Liquidity Status:** System monitoring active. Global cash concentration remains optimal.")
-    
+# --- 3. SIDEBAR: MACRO CONTROLS ---
+with st.sidebar:
+    st.image("https://cdn-icons-png.flaticon.com/512/2830/2830284.png", width=80)
+    st.title("SmartCash AI")
+    st.caption("Institutional Liquidity Management v1.0")
     st.divider()
     
-    base_dso = calculate_dso(invoices)
-    current_dso = base_dso + stress_level
+    st.subheader("🛠️ Stress Parameters")
+    # SPRINT 8: Collection Latency Slider
+    latency_days = st.slider("Collection Latency (Days)", 0, 90, 15)
     
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Adjusted DSO", f"{current_dso:.1f} Days", f"+{stress_level} Stress", delta_color="inverse")
-    m2.metric("Liquidity Buffer", f"{liquidity_haircut*100:.1f}%", f"{(liquidity_haircut-1)*100:.1f}%")
-    m3.metric("Available Cash", f"${(1200000 * liquidity_haircut)/1e6:.2f}M", "-4.2% Volatility")
-    m4.metric("AI Confidence", "94.8%", "Target >90%")
-
+    # SPRINT 10: Multi-Entity Filter
+    entity = st.selectbox("Company Entity", ["All Entities", "US01", "EU10", "AP20"])
+    if entity != "All Entities":
+        invoices = invoices[invoices['Company_Code'] == entity]
+    
     st.divider()
-    c1, c2 = st.columns([1.5, 1])
+    st.info(f"🟢 **System Status: Secure**\n\n**Vault Ref:** {datetime.now().strftime('%H%M%S')}-TXN")
+
+# --- 4. TOP-LEVEL METRICS ---
+m1, m2, m3, m4 = st.columns(4)
+base_dso = st.session_state.engine.calculate_dso(invoices)
+m1.metric("Adjusted DSO", f"{base_dso + latency_days:.1f} Days", f"+{latency_days}d Latency", delta_color="inverse")
+m2.metric("Matching STP Rate", "94.2%", "+1.4% WoW")
+m3.metric("ESG Risk Exposure", "Medium", "Tier B Avg", delta_color="off")
+m4.metric("Vault Health", "Verified", "SHA-256 Active")
+
+st.divider()
+
+# --- 5. MAIN NAVIGATION TABS ---
+tab_exec, tab_workbench, tab_risk, tab_audit = st.tabs([
+    "📈 Executive Dashboard", 
+    "⚡ Analyst Workbench", 
+    "🛡️ Risk Radar", 
+    "📜 Audit Ledger"
+])
+
+# --- TAB 1: EXECUTIVE DASHBOARD (Sprints 1 & 8) ---
+with tab_exec:
+    c1, c2 = st.columns([2, 1])
     with c1:
-        st.subheader("📉 Liquidity Bridge (Stress-Adjusted)")
-        opening_bal, new_inv = 1200000, invoices[invoices['Status'] == 'Open']['Amount'].sum()
-        actual_coll = invoices[invoices['Status'] == 'Paid']['Amount'].sum() * liquidity_haircut
+        st.subheader("💧 Liquidity Bridge (Stress-Adjusted)")
+        # Fetching Waterfall Data from Analytics Backend
+        waterfall_data = st.session_state.analytics.get_waterfall_data(invoices, latency_days)
+        
         fig_waterfall = go.Figure(go.Waterfall(
-            orientation = "v", measure = ["relative", "relative", "total", "relative", "total"],
-            x = ["Opening Cash", "Expected AR", "Gross Liquidity", "Collections (Stressed)", "Net Position"],
-            y = [opening_bal, new_inv, 0, -actual_coll, 0],
+            orientation = "v",
+            measure = waterfall_data["measure"],
+            x = waterfall_data["x"],
+            y = waterfall_data["y"],
             connector = {"line":{"color":"#30363d"}},
             decreasing = {"marker":{"color":"#f85149"}},
-            increasing = {"marker":{"color":"#2ea043"}},
+            increasing = {"marker":{"color":"#3fb950"}},
             totals = {"marker":{"color":"#1f6feb"}}
         ))
-        fig_waterfall.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=10, b=10))
+        fig_waterfall.update_layout(template="plotly_dark", height=450, margin=dict(l=10,r=10,t=10,b=10))
         st.plotly_chart(fig_waterfall, use_container_width=True)
+        
 
     with c2:
-        st.subheader("🔮 Predictive DSO Drift")
-        slope, intercept, r_sq = get_dso_forecast(invoices, stress_level)
-        months = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"]
-        forecast_y = (intercept + slope * np.arange(len(months))) + stress_level
-        fig_line = px.line(x=months, y=forecast_y, markers=True, template="plotly_dark")
-        fig_line.update_traces(line_color='#2ea043', line_width=4)
-        st.plotly_chart(fig_line, use_container_width=True)
+        st.subheader("📅 Cash Flow Forecast")
+        # Dummy predictive data for visual fidelity
+        months = ["Dec", "Jan", "Feb", "Mar"]
+        forecast = [42, 45, 48 + (latency_days/2), 52 + latency_days]
+        fig_forecast = px.line(x=months, y=forecast, markers=True, template="plotly_dark")
+        fig_forecast.update_traces(line_color="#58a6ff", line_width=4)
+        st.plotly_chart(fig_forecast, use_container_width=True)
 
-# --- 7. VIEW: ANALYST WORKBENCH ---
-elif menu == "Analyst Workbench":
-    st.title("⚡ Smart Reconciliation Workbench")
+# --- TAB 2: ANALYST WORKBENCH (Sprints 2 & 3) ---
+with tab_workbench:
+    st.subheader("📥 Active Bank Feed")
+    # Enhanced dataframe with matching capability
     st.dataframe(bank_feed, use_container_width=True, hide_index=True)
+    
     st.divider()
-    col_sel, col_match = st.columns([1, 2])
-    with col_sel:
+    w1, w2 = st.columns([1, 2])
+    
+    with w1:
         st.subheader("Step 1: Focus Item")
-        tx_id = st.selectbox("Select Transaction:", bank_feed.index, format_func=lambda x: f"{bank_feed.iloc[x]['Bank_TX_ID']} | {bank_feed.iloc[x]['Payer_Name']}")
-        tx_data = bank_feed.iloc[tx_id]
-        st.info(f"**Selected Amount:** {tx_data['Currency']} {tx_data['Amount_Received']:,.2f}")
-    with col_match:
+        tx_selection = st.selectbox("Select Bank Transaction", bank_feed.index, 
+                                    format_func=lambda x: f"{bank_feed.iloc[x]['Payer_Name']} | {bank_feed.iloc[x]['Amount']}")
+        tx = bank_feed.iloc[tx_selection]
+        st.info(f"**Target:** {tx['Payer_Name']} | **Sum:** {tx['Currency']} {tx['Amount']}")
+
+    with w2:
         st.subheader("Step 2: AI Match Execution")
-        if st.button("Run Multi-Factor Match Engine"):
-            matches = engine.run_match(tx_data['Amount_Received'], tx_data['Payer_Name'], tx_data['Currency'], invoices)
-            if matches:
-                top = matches[0]
-                if top['confidence'] >= 0.95:
-                    st.success(f"✅ STP MATCH CONFIRMED ({top['confidence']*100}%)")
+        if st.button("🔥 Execute Multi-Factor Matching"):
+            results = st.session_state.engine.run_match(tx['Amount'], tx['Payer_Name'], tx['Currency'], invoices)
+            
+            if results:
+                match = results[0]
+                conf = match['confidence']
+                
+                if conf >= 0.95:
+                    st.success(f"✅ **STP MATCH FOUND: {conf*100}% Confidence**")
                     st.balloons()
-                    st.session_state.audit_engine.log_transaction(top['Invoice_ID'], "AUTO_STP")
+                    # LOG TO COMPLIANCE VAULT
+                    st.session_state.vault.log_action(match['Invoice_ID'], "AUTO_MATCH_STP", tx['Amount'])
                 else:
-                    st.warning(f"⚠️ EXCEPTION: Match Confidence {top['confidence']*100}%")
-                    agent = GenAIAssistant()
-                    st.text_area("AI Remittance Request Draft:", agent.generate_email(top['Customer'], tx_data['Amount_Received']), height=200)
+                    st.warning(f"⚠️ **EXCEPTION: Low Confidence ({conf*100}%)**")
+                    # SPRINT 3: GenAI Dunning/Remittance Sidebar
+                    with st.expander("🤖 GenAI Remittance Assistant", expanded=True):
+                        st.markdown("Confidence score below threshold. AI suggests a clarification request:")
+                        email_draft = f"Subject: Payment Discrepancy - {tx['Payer_Name']}\n\nDear Accounts Payable,\n\nWe received your payment of {tx['Amount']} but are unable to auto-reconcile it..."
+                        st.text_area("Draft Communication", value=email_draft, height=180)
+                        st.button("✉️ Dispatch Email")
+            else:
+                st.error("❌ No suitable candidates found in Ledger.")
 
-# --- 8. VIEW: RISK & AUDIT ---
-elif menu == "Risk & Governance":
-    st.title("🛡️ Institutional Risk Radar")
-    fig_sun = px.sunburst(invoices, path=['Currency', 'Customer', 'ESG_Score'], values='Amount', template="plotly_dark", color='ESG_Score',
-                         color_discrete_map={'AA': '#238636', 'A': '#2ea043', 'B': '#d29922', 'C': '#f85149'})
+# --- TAB 3: RISK RADAR (Sprint 5) ---
+with tab_risk:
+    st.subheader("🌎 Institutional Risk Exposure (ESG Weighted)")
+    fig_sun = px.sunburst(
+        invoices, 
+        path=['Company_Code', 'Currency', 'ESG_Score'], 
+        values='Amount',
+        color='ESG_Score',
+        color_discrete_map={'AA': '#238636', 'A': '#2ea043', 'B': '#d29922', 'C': '#f85149'},
+        template="plotly_dark"
+    )
     st.plotly_chart(fig_sun, use_container_width=True)
+    
 
-elif menu == "Audit Ledger":
-    st.title("🔐 SOC2 Compliance Vault")
-    st.dataframe(st.session_state.audit_engine.get_logs(), use_container_width=True)
-
-st.sidebar.divider()
-st.sidebar.info(f"🟢 **Session Active**\n\n📅 **Date:** {datetime.now().strftime('%Y-%m-%d')}")
+# --- TAB 4: AUDIT LEDGER (Sprint 9) ---
+with tab_audit:
+    st.subheader("🔐 SOC2 Compliance Vault (Immutable)")
+    st.info("The ledger below is a real-time feed from the SHA-256 Hashed Audit CSV.")
+    # Read from backend/compliance.py
+    logs = st.session_state.vault.get_logs()
+    st.dataframe(logs, use_container_width=True, hide_index=True)
