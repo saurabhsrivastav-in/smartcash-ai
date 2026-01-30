@@ -5,7 +5,16 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 
-# --- 1. CONFIG ---
+# --- 1. INITIALIZE SESSION STATE (MUST BE FIRST) ---
+# This prevents the StreamlitAPIException by ensuring keys exist before widgets use them
+if 'search_key' not in st.session_state:
+    st.session_state.search_key = ""
+if 'chat_key' not in st.session_state:
+    st.session_state.chat_key = ""
+if 'audit' not in st.session_state:
+    st.session_state.audit = []
+
+# --- 2. CONFIG ---
 st.set_page_config(page_title="SmartCash AI | Treasury Command", page_icon="🏦", layout="wide")
 
 st.markdown("""
@@ -18,7 +27,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. DATA ENGINE ---
+# --- 3. DATA ENGINE ---
 @st.cache_data
 def load_institutional_data():
     customers = ['Tesla', 'EcoEnergy', 'GlobalBlue', 'TechRetail', 'Quantum Dyn', 'Alpha Log', 'Nordic Oil', 'Sino Tech', 'Indo Power', 'Euro Mart']
@@ -30,7 +39,7 @@ def load_institutional_data():
     for i in range(300):
         ent = np.random.choice(entities)
         amt = np.random.uniform(50000, 2500000)
-        # Dates spanning up to 540 days back for deep ageing
+        # Deep aging data for the new buckets
         due = datetime(2026, 1, 30) - timedelta(days=np.random.randint(-30, 600))
         inv_data.append({
             'Invoice_ID': f"INV-{1000+i}",
@@ -60,18 +69,16 @@ def load_institutional_data():
         })
     return pd.DataFrame(inv_data), pd.DataFrame(bank_data)
 
-# --- 3. STATE ---
 if 'ledger' not in st.session_state:
-    i_df, b_df = load_institutional_data()
-    st.session_state.ledger = i_df
-    st.session_state.bank = b_df
-    st.session_state.audit = []
+    st.session_state.ledger, st.session_state.bank = load_institutional_data()
 
+# --- 4. FIXED CLEAR LOGIC ---
 def handle_clear():
+    # To clear widgets bound via 'key', we set state directly
     st.session_state.search_key = ""
     st.session_state.chat_key = ""
 
-# --- 4. HEADER ---
+# --- 5. HEADER ---
 st.title("🏦 SmartCash AI | Treasury Command")
 h_col1, h_col2, h_col3 = st.columns([3, 3, 1])
 with h_col1:
@@ -84,9 +91,13 @@ with h_col3:
         handle_clear()
         st.rerun()
 
+if search:
+    res = st.session_state.ledger[st.session_state.ledger['Invoice_ID'].str.contains(search, case=False) | st.session_state.ledger['Customer'].str.contains(search, case=False)]
+    st.dataframe(res, height=150)
+
 st.divider()
 
-# --- 5. FILTERS ---
+# --- 6. SIDEBAR & FILTERS ---
 with st.sidebar:
     st.header("⚙️ Controls")
     menu = st.radio("Workspace", ["📈 Dashboard", "🛡️ Risk Radar", "⚡ Workbench", "📜 Audit"])
@@ -100,10 +111,9 @@ if ent_f != "Consolidated": view_df = view_df[view_df['Company_Code'] == ent_f]
 liq_pool = (view_df['Amount_Remaining'].sum() / 1e6) - (latency * 0.12)
 today = datetime(2026, 1, 30)
 
-# --- 6. WORKSPACE ---
+# --- 7. WORKSPACE ---
 
 if menu == "📈 Dashboard":
-    # Top Metrics
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Adjusted DSO", f"{34+latency}d", f"+{latency}d")
     m2.metric("Liquidity Pool", f"${liq_pool:.2f}M")
@@ -112,7 +122,7 @@ if menu == "📈 Dashboard":
 
     st.divider()
 
-    # FIRST: DETAILED AGEING CHART
+    # AGEING CHART (PRIORITY)
     st.subheader("⏳ Accounts Receivable Ageing Analysis")
     ov = view_df[view_df['Status'] == 'Overdue'].copy()
     if not ov.empty:
@@ -128,20 +138,19 @@ if menu == "📈 Dashboard":
             else: return "361-540"
         
         ov['Bucket'] = ov['Due_Date'].apply(get_bucket)
-        # Sorting buckets for logical order
         bucket_order = ["0-15", "16-30", "31-60", "61-90", "91-120", "121-180", "181-360", "361-540"]
         age_data = ov.groupby('Bucket')['Amount_Remaining'].sum().reindex(bucket_order, fill_value=0).reset_index()
         
         fig_age = px.bar(age_data, x='Bucket', y='Amount_Remaining', 
-                         labels={'Bucket': 'Days Past Due', 'Amount_Remaining': 'Outstanding Balance ($)'},
-                         color='Bucket', color_discrete_sequence=px.colors.sequential.Reds)
+                         labels={'Bucket': 'Days Past Due (DPD)', 'Amount_Remaining': 'Balance Outstanding ($)'},
+                         color='Bucket', color_discrete_sequence=px.colors.sequential.YlOrRd_r)
         fig_age.update_layout(template="plotly_dark", height=450, showlegend=False)
         st.plotly_chart(fig_age, use_container_width=True)
         
 
     st.divider()
 
-    # SECOND: HEATMAP & GAUGE ROW
+    # HEATMAP & GAUGE
     c1, c2 = st.columns([1, 2])
     with c1:
         st.subheader("🛡️ Data Confidence")
@@ -162,7 +171,6 @@ if menu == "📈 Dashboard":
                           labels=dict(x="Hedge Coverage Ratio", y="FX Volatility (%)", color="Liquidity ($M)"))
         fig_h.update_layout(template="plotly_dark", height=350)
         st.plotly_chart(fig_h, use_container_width=True)
-        
 
 elif menu == "🛡️ Risk Radar":
     st.subheader("🛡️ Multi-Level Risk Exposure Radar")
@@ -197,18 +205,8 @@ elif menu == "⚡ Workbench":
         if not ov.empty:
             cust_name = st.selectbox("Select Debtor", ov['Customer'].unique())
             inv_row = ov[ov['Customer'] == cust_name].iloc[0]
-            email_text = f"""Subject: URGENT: Payment Overdue for {inv_row['Customer']} ({inv_row['Invoice_ID']})
-            
-Dear Accounts Payable Team,
-
-This is a formal notice regarding Invoice {inv_row['Invoice_ID']}, which was due on {inv_row['Due_Date']}.
-Our records indicate an outstanding balance of {inv_row['Currency']} {inv_row['Amount_Remaining']:,.2f}.
-
-Please confirm the payment status or provide a remittance advice by EOD.
-
-Best Regards,
-Treasury Operations Team"""
-            st.text_area("Review Email Body", email_text, height=250)
+            email_text = f"Subject: URGENT: Payment Overdue for {inv_row['Customer']} ({inv_row['Invoice_ID']})\n\nOutstanding: {inv_row['Currency']} {inv_row['Amount_Remaining']:,.2f}."
+            st.text_area("Review Email Body", email_text, height=150)
             if st.button("📤 Send Notice"):
                 st.session_state.audit.insert(0, {"Time": datetime.now().strftime("%H:%M"), "Action": "DUNNING_SENT", "ID": inv_row['Invoice_ID'], "Detail": f"Sent to {cust_name}"})
                 st.success("Notice dispatched.")
@@ -216,18 +214,16 @@ Treasury Operations Team"""
     with t3:
         c_flag, c_res = st.columns(2)
         with c_flag:
-            st.write("**Flag New Dispute**")
-            to_freeze = st.selectbox("Select Invoice to Freeze", view_df[~view_df['Is_Disputed']]['Invoice_ID'])
-            if st.button("🚩 Freeze Invoice"):
+            to_freeze = st.selectbox("Freeze Invoice", view_df[~view_df['Is_Disputed']]['Invoice_ID'])
+            if st.button("🚩 Freeze"):
                 idx = st.session_state.ledger.index[st.session_state.ledger['Invoice_ID'] == to_freeze][0]
                 st.session_state.ledger.at[idx, 'Is_Disputed'] = True
                 st.session_state.audit.insert(0, {"Time": datetime.now().strftime("%H:%M"), "Action": "DISPUTE_FLAG", "ID": to_freeze, "Detail": "Manual Freeze"})
                 st.rerun()
         with c_res:
-            st.write("**Resolve Dispute**")
             disputed_items = view_df[view_df['Is_Disputed']]
             if not disputed_items.empty:
-                to_resolve = st.selectbox("Select Invoice to Unfreeze", disputed_items['Invoice_ID'])
+                to_resolve = st.selectbox("Unfreeze Invoice", disputed_items['Invoice_ID'])
                 if st.button("✅ Resolve"):
                     idx = st.session_state.ledger.index[st.session_state.ledger['Invoice_ID'] == to_resolve][0]
                     st.session_state.ledger.at[idx, 'Is_Disputed'] = False
