@@ -1,26 +1,26 @@
-# --- CORE DATA & ANALYTICS ---
+# --- CORE DATA & QUANTITATIVE ANALYTICS ---
 pandas>=2.2.0
 numpy>=1.26.0
-scipy>=1.12.0          # Used in backend/analytics.py for Stress Testing
-scikit-learn>=1.4.0    # Sprint 7/8: Behavioral Clustering
+scipy>=1.12.0          # Sprint 8: Statistical Stress Testing & Liquidity Decay
+scikit-learn>=1.4.0    # Sprint 7/8: Behavioral Clustering & Risk Profiling
 
-# --- MATCHING ENGINE & AI ---
-fuzzywuzzy>=0.18.0     # Sprint 2: Fuzzy Logic Matching
-python-Levenshtein>=0.23.0
-openai>=1.10.0         # Sprint 3/6: GenAI Agent (Gemini/GPT)
-lxml>=5.1.0            # Sprint 11: High-performance ISO 20022 XML Parsing
+# --- MATCHING ENGINE & COGNITIVE AI ---
+fuzzywuzzy>=0.18.0     # Sprint 2: String Similarity Matching
+python-Levenshtein>=0.23.0 # Accelerates Fuzzy matching performance
+openai>=1.10.0         # Sprint 3/6: GenAI for Dunning & Exception Reasoning
+lxml>=5.1.0            # Sprint 11: High-performance ISO 20022 (camt.053) Parsing
 
-# --- UI & VISUALIZATION ---
-streamlit>=1.31.0      # Main Web Framework
-plotly>=5.18.0         # Risk Radar & Waterfall Charts
-st-annotated-text      # UI highlighting for matched tokens
+# --- UI FRAMEWORK & FINANCIAL VISUALIZATION ---
+streamlit>=1.31.0      # Command Center Web Framework
+plotly>=5.18.0         # Risk Radar (Sunburst) & Liquidity Bridge (Waterfall)
+st-annotated-text      # Token-level highlighting for Remittance mapping
 
-# --- SECURITY, GOVERNANCE & UTILS ---
-cryptography>=42.0.0   # Sprint 11: PQC & Encryption
-hashlib                # Sprint 9: SHA-256 Compliance Hashing (Standard Lib)
-python-dotenv>=1.0.0   # Secure API Key management
-python-dateutil>=2.8.2
+# --- SECURITY, GOVERNANCE & COMPLIANCE ---
+# Note: hashlib is part of the Python Standard Library (no install needed)
+cryptography>=42.0.0   # Sprint 11: AES-256 & Quantum-Resistant Hardening
+python-dotenv>=1.0.0   # Management of Vault & API Credentials
+python-dateutil>=2.8.2 # ISO 8601 Timestamp parsing for global entities
 
-# --- TESTING & QUALITY ASSURANCE ---
-pytest>=8.0.0          # For tests/test_matching_logic.py
-pytest-cov>=4.1.0      # Tracking Test Coverage for Audit logs
+# --- ENTERPRISE TESTING & AUDIT ---
+pytest>=8.0.0          # UAT for Match Engine Logic
+pytest-cov>=4.1.0      # Code coverage reporting for SOC2 compliance
