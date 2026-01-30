@@ -16,37 +16,24 @@ if 'chat_key' not in st.session_state:
 # --- 2. DATA ENGINE (FIX FOR ATTRIBUTE ERROR) ---
 @st.cache_data
 def load_institutional_data():
-    customers = ['Tesla', 'EcoEnergy', 'GlobalBlue', 'TechRetail', 'Quantum Dyn', 'Alpha Log', 'Nordic Oil', 'Sino Tech', 'Indo Power', 'Euro Mart']
-    entities = ['1000 (US)', '2000 (EU)', '3000 (UK)']
-    currencies = {'1000 (US)': 'USD', '2000 (EU)': 'EUR', '3000 (UK)': 'GBP'}
-    ratings = ['AAA', 'AA', 'A', 'B', 'C', 'D']
-    
-    inv_data = []
-    for i in range(300):
-        ent = np.random.choice(entities)
-        amt = np.random.uniform(50000, 2500000)
-        due = datetime(2026, 1, 30) - timedelta(days=np.random.randint(-30, 600))
-        inv_data.append({
-            'Invoice_ID': f"INV-{1000+i}",
-            'Company_Code': ent,
-            'Customer': np.random.choice(customers),
-            'Amount_Remaining': round(amt, 2),
-            'Currency': currencies[ent],
-            'ESG_Score': np.random.choice(ratings),
-            'Due_Date': due.strftime('%Y-%m-%d'),
-            'Status': 'Overdue' if due < datetime(2026, 1, 30) else 'Open',
-            'Is_Disputed': False
-        })
-    
-    bank_data = []
-    for i in range(20):
-        bank_data.append({
-            'Bank_ID': f"TXN-{8000+i}",
-            'Customer': np.random.choice(customers),
-            'Amount_Received': round(np.random.uniform(20000, 1500000), 2),
-            'Date': (datetime(2026, 1, 15) + timedelta(days=i)).strftime('%Y-%m-%d')
-        })
-    return pd.DataFrame(inv_data), pd.DataFrame(bank_data)
+    try:
+        # 1. Load your new 200+ row Invoice file
+        inv_df = pd.read_csv("invoices.csv")
+        inv_df['Due_Date'] = pd.to_datetime(inv_df['Due_Date'])
+        
+        # Sync naming: Repository logic expects 'Amount_Remaining'
+        if 'Amount' in inv_df.columns:
+            inv_df = inv_df.rename(columns={'Amount': 'Amount_Remaining'})
+            
+        # 2. Load your 300+ row Bank Feed file
+        bank_df = pd.read_csv("bank_feed.csv")
+        bank_df['Date'] = pd.to_datetime(bank_df['Date'])
+        bank_df = bank_df.sort_values('Date') # Crucial for the Multi-Year Graph
+
+        return inv_df, bank_df
+    except FileNotFoundError:
+        st.error("CSV files not found. Please ensure bank_feed.csv and invoices.csv are in the root folder.")
+        return pd.DataFrame(), pd.DataFrame()
 
 if 'ledger' not in st.session_state or 'bank' not in st.session_state:
     ledger_df, bank_df = load_institutional_data()
