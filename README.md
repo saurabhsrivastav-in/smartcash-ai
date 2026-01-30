@@ -30,11 +30,3 @@
 * **[Product Requirements (PRD)](./docs/PRD.md)**
 * **[UAT & Quality Assurance](./UAT_Plan.md)**
 * **[AR Analyst User Guide](./User_Guide_AR_Analyst.md)**
-
----
-
-## 🚀 Quick Start (Local Deployment)
-
-### 1. Initialize Environment
-```bash
-pip install -r requirements.txt
