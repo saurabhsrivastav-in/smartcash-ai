@@ -1,64 +1,65 @@
-# 📢 Release Notes: SmartCash AI v1.0.0
-**Version:** 1.0.0-PROD (Long-Term Support)  
+# 🚀 Release Notes: SmartCash AI v1.0.0 (Production-Ready)
+
+**Version:** 1.0.0  
 **Release Date:** January 30, 2026  
-**Codename:** *Atomic Settlement* ---
-
-## 🚀 Overview
-Version 1.0.0 marks the transition of SmartCash AI from a proof-of-concept to a production-ready **Autonomous Treasury Engine**. This release introduces the full "Match-to-Post" workflow, allowing for 85% straight-through processing (STP) of bank credits directly into SAP.
+**Status:** Stable / Production Baseline  
+**Lead Architect:** Saurabh Srivastav  
 
 ---
 
-## ✨ Key Features
+## 📢 Overview
+We are proud to announce the official release of **SmartCash AI v1.0.0**, an institutional-grade treasury automation layer. This release focuses on bridging the "Remittance Gap" by combining high-performance fuzzy logic with a real-time executive risk interface. 
 
-### 1. SmartMatching Engine (V1 Core)
-* **Multi-Factor Heuristics:** Implementation of a 12-layer matching algorithm utilizing `thefuzz` for payer name normalization.
-* **Scenario-Based Logic:** Automated routing for Full Payments, Partial Payments (Claims), and Bulk Remittances.
-* **Confidence Scoring:** Every match is assigned a percentage score; matches >95% are auto-posted to the GL.
+---
+
+## ✨ Key Features & Enhancements
+
+### 🧠 Core Engine: Multi-Factor Matching
+* **Fuzzy Identification:** Integrated `thefuzz` (Levenshtein Distance) logic to identify payers and invoices even when bank narratives are truncated or misspelled.
+* **Waterfall Logic:** Implemented a cascading match strategy (Exact → Fuzzy → Exception) to ensure 100% data integrity before posting.
+
+### 🛡️ Governance & Risk
+* **SOC2 Compliance Vault:** Every transaction match is now assigned a unique `Hash_ID` and logged in an immutable audit ledger, ensuring zero-gap traceability for external auditors.
+* **Risk Radar:** Deployed a hierarchical Sunburst visualization to monitor liquidity concentration across Currencies, Customers, and ESG Scores.
 
 
-
-### 2. GenAI Remittance Assistant
-* **OCR Integration:** Vision-based extraction of invoice data from unstructured PDF and JPG attachments.
-* **Autonomous Communication:** Integration of LLM-based drafting for customer dispute emails and payment clarifications.
-
-### 3. Institutional Governance
-* **ESG Risk Guard:** Real-time flagging of transactions involving counterparties with low ESG ratings (D/E).
-* **SOC2 Compliance Vault:** Every automated action generates a SHA-256 hashed audit log, ensuring an immutable record for auditors.
-
-### 4. Executive Command Center
-* **Liquidity Heatmaps:** Real-time visualization of cash inflow trends by currency (USD, EUR, GBP).
-* **DSO Tracker:** Live monitoring of Days Sales Outstanding impact.
-
+### 📊 Strategic Treasury UI
+* **Macro Stress Controls:** Added a Numpy-driven "Collection Latency" slider, allowing Treasurers to simulate the impact of global slowdowns on liquidity buffers.
+* **Analyst Workbench:** A dedicated "Exception-Only" interface that enables analysts to review low-confidence matches and trigger GenAI-driven remittance requests.
 
 
 ---
 
-## 🔧 Technical Improvements
-* **Database Optimization:** Refactored PostgreSQL indexing to support 1,000+ transaction lookups in <200ms.
-* **Security:** Enabled **Post-Quantum Cryptography (PQC)** for all data-at-rest within the `data/` directory.
-* **Scalability:** Implemented `st.cache_data` in the Streamlit frontend to handle large-scale `invoices.csv` datasets without UI lag.
+## 🛠️ Technical Specifications
+* **Frontend:** Streamlit (Custom Dark-Banking Theme)
+* **Backend:** Python 3.11+ / Pandas / Numpy
+* **Analytics:** Scipy.stats for DSO trend forecasting
+* **Visualization:** Plotly (Waterfall & Sunburst charts)
+* **Match Logic:** FuzzyWuzzy (Levenshtein algorithms)
 
 ---
 
-## 🐞 Bug Fixes
-* **Currency Collision:** Fixed an issue where GBP and EUR amounts were aggregating without conversion in the Summary KPI.
-* **Date Parsing:** Resolved a bug in `backend/engine.py` where ISO-8601 dates were failing for weekend-dated transactions.
-* **Fuzzy Thresholds:** Tuned the matching sensitivity to reduce false positives for "Tesla Inc" vs "Tesla Energy."
+## 🐞 Fixed in this Release (v1.0.0)
+* **STP Performance:** Optimized data ingestion to handle 200+ concurrent invoice records with sub-1s latency.
+* **UI Stability:** Fixed a critical "Broken Image" icon on the Executive Dashboard by implementing a robust Unsplash CDN failover.
+* **Data Handling:** Standardized date-time parsing for `invoices.csv` to ensure cross-browser compatibility on Streamlit Cloud.
 
 ---
 
-## 🛠️ Installation & Upgrade
-To deploy this version, update your environment and sync the production data:
+## 🗺️ Roadmap: What's Next?
+* **v1.1.0:** LLM-based OCR for automated PDF remittance scraping.
+* **v1.2.0:** Bidirectional SAP S/4HANA Write-Back (BAPI Integration).
+* **v2.0.0:** Predictive Cash Forecasting using global macro-economic signals.
 
-```bash
-# 1. Pull the latest release
-git pull origin main
+---
 
-# 2. Update system packages
-sudo apt-get install -y $(cat packages.txt)
+## 📥 Installation & Deployment
+To deploy the latest stable build:
+1. Clone the repository: `git clone [repo-url]`
+2. Install dependencies: `pip install -r requirements.txt`
+3. Generate sample data: `python mock_data_maker.py`
+4. Launch app: `streamlit run main.py`
 
-# 3. Update Python dependencies
-pip install -r requirements.txt
+---
 
-# 4. Initialize the Engine
-python main.py
+**"Transforming Treasury from a Cost Center to a Liquidity Hub."** *The SmartCash AI Development Team*
