@@ -95,51 +95,87 @@ st.divider()
 
 # --- 5. PAGE ROUTING LOGIC ---
 
-# --- TAB 1: EXECUTIVE DASHBOARD ---
+# --- TAB 1: EXECUTIVE DASHBOARD (YoY Growth Edition) ---
 if menu == "📈 Executive Dashboard":
+    st.subheader("🗓️ Year-over-Year Performance Analysis")
+    year_col1, year_col2 = st.columns(2)
+    with year_col1:
+        primary_year = st.selectbox("Primary Year", [2026, 2025, 2024], index=0)
+    with year_col2:
+        compare_year = st.selectbox("Comparison Year", [2025, 2024, "None"], index=1)
+
+    # --- GROWTH CALCULATION ENGINE ---
+    # Hypothetical Aggregates (In a real app, these would sum from df_filtered)
+    curr_total = 292.5  # Primary Year Total (M)
+    prev_total = 267.0  # Comparison Year Total (M)
+    
+    if compare_year != "None":
+        growth_val = curr_total - prev_total
+        growth_pct = (growth_val / prev_total) * 100
+        
+        # Display Growth Indicators
+        g1, g2, g3 = st.columns(3)
+        g1.metric(f"Total Liquidity ({primary_year})", f"${curr_total}M")
+        g2.metric(f"Total Liquidity ({compare_year})", f"${prev_total}M")
+        g3.metric("YoY Liquidity Growth", f"{growth_pct:+.1f}%", f"{growth_val:+.1f}M USD")
+        
+        st.divider()
+
     c1, c2 = st.columns([2, 1])
+    
     with c1:
-        st.subheader("💧 Liquidity Bridge (Stress-Adjusted)")
+        st.subheader(f"💧 Liquidity Bridge: {primary_year} vs {compare_year}")
         if not invoices.empty:
-            waterfall_data = st.session_state.analytics.get_waterfall_data(invoices, latency_days)
-            fig_waterfall = go.Figure(go.Waterfall(
-                measure = waterfall_data["measure"],
-                x = waterfall_data["x"], y = waterfall_data["y"],
-                decreasing = {"marker":{"color":"#f85149"}},
-                increasing = {"marker":{"color":"#3fb950"}},
-                totals = {"marker":{"color":"#1f6feb"}}
+            months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
+            primary_values = [42, 45, 48, 52, 50, 55]
+            compare_values = [38, 41, 44, 46, 48, 50]
+
+            fig_bridge = go.Figure()
+            fig_bridge.add_trace(go.Bar(
+                x=months, y=primary_values, name=f"{primary_year} (Current)",
+                marker_color='#58a6ff',
+                customdata=np.array(primary_values) - np.array(compare_values),
+                hovertemplate="Value: %{y}M<br>YoY Diff: %{customdata:+.1f}M"
             ))
-            fig_waterfall.update_layout(template="plotly_dark", height=450)
-            st.plotly_chart(fig_waterfall, use_container_width=True)
+            
+            if compare_year != "None":
+                fig_bridge.add_trace(go.Bar(
+                    x=months, y=compare_values, name=f"{compare_year} (Baseline)",
+                    marker_color='#30363d', opacity=0.7
+                ))
+
+            fig_bridge.update_layout(
+                template="plotly_dark", barmode='group',
+                xaxis_title="Reporting Month", yaxis_title="Liquidity (USD M)",
+                margin=dict(l=10, r=10, t=10, b=10),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+            )
+            st.plotly_chart(fig_bridge, use_container_width=True)
 
     with c2:
         st.subheader("📅 Cash Flow Forecast")
-        months = ["Dec", "Jan", "Feb", "Mar"]
-        forecast = [42, 45, 48 + (latency_days/2), 52 + latency_days]
-        
-        # Create figure with labels
-        fig_forecast = px.line(
-            x=months, 
-            y=forecast, 
-            markers=True, 
-            template="plotly_dark",
-            labels={'x': 'Fiscal Month', 'y': 'Liquidity (M)'} # Defining axis labels
-        )
-        
-        fig_forecast.update_traces(
-            line_color="#58a6ff", 
-            line_width=4,
-            name="Projected Cash"
-        )
-        
-        # Refined axis styling
+        fig_forecast = go.Figure()
+
+        # Primary Forecast (Reactive to Sidebar Latency)
+        fig_forecast.add_trace(go.Scatter(
+            x=months, y=[v + (latency_days/5) for v in primary_values],
+            mode='lines+markers', name='Projection',
+            line=dict(color='#58a6ff', width=4)
+        ))
+
+        if compare_year != "None":
+            fig_forecast.add_trace(go.Scatter(
+                x=months, y=compare_values,
+                mode='lines', name='Prior Year Actual',
+                line=dict(color='#8b949e', dash='dot')
+            ))
+
         fig_forecast.update_layout(
-            xaxis_title="Reporting Period",
-            yaxis_title="Expected Inflow (USD Millions)",
-            hovermode="x unified",
-            margin=dict(l=20, r=20, t=20, b=20)
+            template="plotly_dark",
+            xaxis_title="Month", yaxis_title="Inflow (M)",
+            margin=dict(l=10, r=10, t=10, b=10),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
-        
         st.plotly_chart(fig_forecast, use_container_width=True)
 
 # --- TAB 2: ANALYST WORKBENCH ---
