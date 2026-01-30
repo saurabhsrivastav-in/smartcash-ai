@@ -33,17 +33,11 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- 2. RESOURCE INITIALIZATION ---
-# Change @st.cache_data to @st.cache_data(ttl=1) to force refresh every second during dev
-@st.cache_data(ttl=1) 
+@st.cache_data
 def load_data():
-    try:
-        inv = pd.read_csv('data/invoices.csv')
-        bank = pd.read_csv('data/bank_feed.csv')
-        
-        # LOGGING: This prints to your terminal so you can see if columns exist
-        print(f"DEBUG: Invoice Columns: {inv.columns.tolist()}")
-        
-        return inv, bank
+    inv = pd.read_csv('data/invoices.csv')
+    bank = pd.read_csv('data/bank_feed.csv')
+    return inv, bank
     except Exception as e:
         st.error(f"⚠️ Data Source Error: {e}")
         return pd.DataFrame(), pd.DataFrame()    
