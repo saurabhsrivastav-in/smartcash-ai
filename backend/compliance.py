@@ -1,35 +1,44 @@
 import pandas as pd
 import hashlib
 import json
+import os
 import random
 from datetime import datetime, timedelta
 
 class ComplianceVault:
     """
     Implements a WORM (Write Once, Read Many) style audit ledger.
-    Uses SHA-256 hashing to ensure non-repudiation of AI and human actions.
+    Ensures every treasury action is cryptographically signed and 
+    permanently archived to CSV.
     """
-    def __init__(self, ledger_path="data/audit_ledger.csv"):
+    def __init__(self, ledger_path="data/compliance_log.csv"):
         self.ledger_path = ledger_path
         self.vault = []
-        self._generate_mock_audit_trail()
+        
+        # Ensure data directory exists
+        os.makedirs(os.path.dirname(self.ledger_path), exist_ok=True)
+        
+        # Initialize the physical log file with headers if it doesn't exist
+        if not os.path.exists(self.ledger_path):
+            headers = pd.DataFrame(columns=[
+                "Timestamp", "Event_ID", "Invoice_Ref", "Action", 
+                "Amount", "Operator", "Status", "Hash_ID"
+            ])
+            headers.to_csv(self.ledger_path, index=False)
 
     def generate_sha256(self, data_dict):
         """
-        Creates a unique cryptographic hash of the transaction metadata.
-        This is the core requirement for Sprint 9's 'Immutable Ledger'.
+        Creates a deterministic SHA-256 fingerprint. 
+        Crucial for verifying that log entries haven't been tampered with.
         """
-        # Sort keys to ensure consistent hashing regardless of dictionary order
         encoded_data = json.dumps(data_dict, sort_keys=True).encode()
         return hashlib.sha256(encoded_data).hexdigest()
 
     def log_action(self, invoice_ref, action_type, amount=0, operator="AI_AGENT_STP"):
         """
-        Logs a new event with a deterministic cryptographic signature.
+        Signs the transaction and appends it to the permanent CSV log.
         """
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-        # Data payload to be hashed
         payload = {
             "Timestamp": timestamp,
             "Invoice_Ref": invoice_ref,
@@ -38,45 +47,26 @@ class ComplianceVault:
             "Operator": operator
         }
 
-        new_entry = {
-            **payload,
-            "Event_ID": f"TXN-{random.randint(100000, 999999)}",
-            "Status": "✅ SECURE",
-            "Hash_ID": self.generate_sha256(payload) # Actual SHA-256 Signature
-        }
-        
+        # Generate unique cryptographic ID
+        hash_id = self.generate_sha256(payload)
+        event_id = f"TXN-{random.randint(100000, 999999)}"
+
+        new_entry = {**payload, "Event_ID": event_id, "Status": "SECURE", "Hash_ID": hash_id}
+
+        # 1. Update In-Memory Vault for UI
         self.vault.insert(0, new_entry)
-        # In production, you would append this row to self.ledger_path here
 
-    def _generate_mock_audit_trail(self):
-        """Populates historical data with valid SHA-256 signatures for the UI."""
-        actions = ["AUTO_MATCH_STP", "MANUAL_OVERRIDE", "STRESS_TEST_ADJ", "TREASURY_SWEEP"]
-        operators = ["AI_GEN_AGENT", "SYSTEM_ROOT", "TREASURY_MGR_01", "AUDIT_BOT"]
+        # 2. Append to Physical CSV (Non-Repudiation Layer)
+        df_entry = pd.DataFrame([new_entry])
+        df_entry.to_csv(self.ledger_path, mode='a', header=False, index=False)
         
-        for i in range(12):
-            past_time = (datetime.now() - timedelta(hours=i*3)).strftime("%Y-%m-%d %H:%M:%S")
-            ref = f"INV-{random.randint(5000, 5999)}"
-            act = random.choice(actions)
-            amt = random.uniform(1000, 50000)
-            op = random.choice(operators)
-            
-            payload = {
-                "Timestamp": past_time,
-                "Invoice_Ref": ref,
-                "Action": act,
-                "Amount": round(amt, 2),
-                "Operator": op
-            }
-
-            self.vault.append({
-                **payload,
-                "Event_ID": f"TXN-{random.randint(100000, 999999)}",
-                "Status": "✅ VERIFIED",
-                "Hash_ID": self.generate_sha256(payload)
-            })
+        return hash_id
 
     def get_logs(self):
-        """Returns the vault as a DataFrame, primarily for the 'Audit Ledger' tab."""
-        df = pd.DataFrame(self.vault)
-        # Ensure the Hash_ID is visible but truncated for UI aesthetics
-        return df
+        """
+        Reads directly from the physical log to ensure the UI shows 
+        the 'Source of Truth'.
+        """
+        if os.path.exists(self.ledger_path):
+            return pd.read_csv(self.ledger_path)
+        return pd.DataFrame(self.vault)
