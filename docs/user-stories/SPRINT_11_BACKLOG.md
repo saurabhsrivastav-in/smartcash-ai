@@ -1,69 +1,67 @@
-# Sprint 11 Backlog: Quantum Security & Ethical AI Governance
+# 🛡️ Sprint 11 Backlog: Post-Quantum Security & T+0 Readiness
 
-**Sprint Goal:** Implement Post-Quantum Cryptography (PQC) for financial data, develop an AI "Explainability" (XAI) module for audit transparency, and launch the Bias-Detection firewall.
-
----
-
-## 🏗️ Story 11.1: Post-Quantum Cryptography (PQC) Integration
-**User Persona:** As a Chief Information Security Officer (CISO), I want all financial transactions to be encrypted with quantum-resistant algorithms so that our data remains secure against future quantum computing threats.
-
-### 📝 Description
-Upgrade the encryption layer for data-at-rest and data-in-transit. Transition from standard RSA/AES to NIST-approved post-quantum algorithms (e.g., CRYSTALS-Kyber) to ensure long-term "Harvest Now, Decrypt Later" protection.
-
-
-
-### ✅ Acceptance Criteria
-- [ ] Implement PQC libraries (e.g., OpenQuantumSafe) for all database connections.
-- [ ] End-to-end encryption for MT942 ingestion and SAP Write-back APIs using quantum-resistant tunnels.
-- [ ] Zero performance degradation: Encryption overhead must remain under 150ms per transaction.
+**Sprint Goal:** Implement Post-Quantum Cryptographic (PQC) standards for data-at-rest and prepare the engine for real-time, T+0 settlement reconciliation.
 
 ---
 
-## 🏗️ Story 11.2: AI Explainability (XAI) Module
-**User Persona:** As an External Auditor, I want to see the "Reasoning" behind an AI-cleared transaction so that I can verify that the autonomous logic follows corporate accounting policies.
+## 🏗️ Story 11.1: Post-Quantum Cryptographic (PQC) Hardening
+**User Persona:** As a Chief Information Security Officer (CISO), I want our financial data encrypted using quantum-resistant algorithms so that our long-term treasury secrets are protected against "Harvest Now, Decrypt Later" attacks.
 
 ### 📝 Description
-Develop a "Logic Trace" for every autonomous match. Instead of a "Black Box," the system will generate a natural language explanation (e.g., "Matched via PO #123 because the 2% variance falls within the 'Early Payment Discount' policy for this vendor").
-
-
+Upgrade the encryption layer for the `Audit Ledger` and `Customer_PII` data. Transition from standard AES/RSA to NIST-approved post-quantum algorithms (e.g., CRYSTALS-Kyber or Dilithium) for data-at-rest.
 
 ### ✅ Acceptance Criteria
-- [ ] Integration of SHAP or LIME frameworks to identify the features influencing each match.
-- [ ] "Why this match?" button in the UI that displays the weighting of factors (Amount, Date, History, ESG).
-- [ ] XAI reports exported as part of the Sprint 9 Audit Package.
+- [ ] **Algorithm Migration:** Implement a PQC wrapper for the sensitive columns in the `invoices.csv` and `compliance_vault`.
+- [ ] **Performance Impact:** Ensure that PQC encryption/decryption does not increase dashboard latency by more than 15%.
+- [ ] **Key Rotation:** Implement an automated key rotation policy logged in the system's internal security heartbeat.
+
+
 
 ---
 
-## 🏗️ Story 11.3: Algorithmic Bias Detection & Firewall
-**User Persona:** As a Diversity & Inclusion Officer, I want to ensure the AI doesn't inadvertently penalize smaller or minority-owned vendors through its prioritization logic.
+## 🏗️ Story 11.2: Real-Time T+0 Settlement Reconciliation
+**User Persona:** As a Treasury Manager, I want the system to reconcile payments in real-time (FedNow / SEPA Instant) rather than waiting for batch processing, so we can achieve true intraday liquidity.
 
 ### 📝 Description
-Implement a bias-detection monitor that audits the "Smart Worklist" (Sprint 3) and "NBA" (Sprint 8). If the AI consistently de-prioritizes specific demographics or regions without financial justification, the "Bias Firewall" triggers a manual override.
+Refactor the ingestion engine to support "Stream Ingestion" rather than "Batch Loading." The engine must trigger the matching logic the moment a single JSON-based ISO 20022 message is received.
 
 ### ✅ Acceptance Criteria
-- [ ] Monthly "Fairness Audit" report showing distribution of STP rates across different vendor categories.
-- [ ] Automated alerts if the AI's "Confidence Score" shows a statistically significant variance between different groups.
-- [ ] Manual override logs for "Bias Correction" events.
+- [ ] **Latency Gate:** Matching logic for a single T+0 transaction must complete in < 200ms.
+- [ ] **Immediate Posting:** Successfully identifies and "pre-posts" matches before the end-of-day bank statement is generated.
+- [ ] **UI Update:** Add a "Live Feed" ticker to the Executive Dashboard showing real-time reconciled value.
 
 ---
 
-## 🏗️ Story 11.4: Decentralized Identity (DID) for Payer Verification
-**User Persona:** As a Risk Manager, I want to use Decentralized Identifiers (DIDs) for customers so that we can eliminate bank-account-spoofing and Business Email Compromise (BEC).
+## 🏗️ Story 11.3: ISO 20022 camt.053 Rich Data Parsing
+**User Persona:** As an AR Analyst, I want the system to utilize the "Ultimate Debtor" and "Remittance Information" fields in camt.053 messages to improve STP rates for complex global payments.
 
 ### 📝 Description
-Shift from static IBAN verification to a DID-based verification system. Customers sign their remittance advice with a private key, providing 100% certainty of the sender's identity.
-
-
+Upgrade the MT942 parser to a full XML-based ISO 20022 `camt.053` parser. This allows the engine to extract rich metadata that is often lost in legacy bank formats.
 
 ### ✅ Acceptance Criteria
-- [ ] Integration with a W3C-compliant DID provider.
-- [ ] Verified "Digital Signature" badge on the Analyst Workbench for all DID-signed remittances.
-- [ ] Automated rejection of transactions that fail the cryptographic signature check.
+- [ ] **XML Mapping:** Correctly maps `<UltmtDbtr>` and `<RmtInf>` tags to the `SmartMatchingEngine`.
+- [ ] **Enhanced STP:** Use the structured remittance data to achieve a 99%+ match rate for ISO-compliant payments.
+- [ ] **Fallback Logic:** Maintain backward compatibility for legacy MT940/MT942 formats.
+
+
+
+---
+
+## 🏗️ Story 11.4: Anomaly Detection (Fraud Prevention)
+**User Persona:** As a Risk Manager, I want the system to flag "Velocity Anomalies" or "Bank Account Mismatches" so we can prevent redirection fraud and unauthorized payment tampering.
+
+### 📝 Description
+Implement a machine-learning-based anomaly detection layer. The system flags transactions that deviate significantly from a customer’s historical payment "fingerprint" (e.g., new bank account, unusual time of day, or strange amount).
+
+### ✅ Acceptance Criteria
+- [ ] **Anomaly Scoring:** Every match receives a "Fraud Probability Score" (0.0 to 1.0).
+- [ ] **Isolation:** High-risk anomalies are automatically quarantined in a "Fraud Review" tab.
+- [ ] **Audit Trail:** Log the specific reason for the fraud flag (e.g., "New Beneficiary Account Detected").
 
 ---
 
 ## 🚀 Technical Sub-tasks for Developers
-1. **Security:** Update the Python `cryptography` stack to support PQC-compliant primitives.
-2. **Modeling:** Implement "Counterfactual Explanations" in the matching engine for XAI.
-3. **Data Governance:** Build a "Bias Monitoring" dashboard using `AIF360` (AI Fairness 360) toolkit.
-4. **API:** Create a lightweight DID-verification endpoint for the Vendor Portal (Sprint 6).
+1. **Security:** Research and integrate a PQC library (e.g., `liboqs` or a Python wrapper for Dilithium).
+2. **Protocol Upgrade:** Develop `backend/iso20022_parser.py` using `lxml` for high-performance XML parsing.
+3. **Data Science:** Implement an Isolation Forest or One-Class SVM model for `anomaly_detection.py`.
+4. **Mock Data:** Update `mock_data_maker.py` to generate XML-based camt.053 files and "fraudulent" payment outliers.
