@@ -1,3 +1,5 @@
+[![SmartCash AI CI](https://github.com/saurabhsrivastav-in/SmartCash-AI/actions/workflows/python-app.yml/badge.svg)](https://github.com/saurabhsrivastav-in/SmartCash-AI/actions/workflows/python-app.yml)
+
 # 🏦 SmartCash AI: Institutional Cash Orchestration & Autonomous O2C 🚀
 
 ![Status](https://img.shields.io/badge/Status-Enterprise--Ready-success)
