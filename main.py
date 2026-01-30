@@ -173,32 +173,21 @@ with tab_workbench:
 with tab_risk:
     st.subheader("🌎 Institutional Risk Exposure (ESG Weighted)")
     
-    # Define the required columns for the visualization
-    required_risk_cols = ['Company_Code', 'Currency', 'ESG_Score', 'Amount']
+    # Logic to handle both 'Customer' and 'Customer_Name'
+    name_col = 'Customer_Name' if 'Customer_Name' in invoices.columns else 'Customer'
     
-    # Check if all columns exist in the dataframe
-    if all(col in invoices.columns for col in required_risk_cols):
+    # Check for the absolute minimum columns needed for the Sunburst
+    if 'Company_Code' in invoices.columns and 'ESG_Score' in invoices.columns:
         fig_sun = px.sunburst(
             invoices, 
-            path=['Company_Code', 'Currency', 'ESG_Score'], 
+            path=['Company_Code', 'Currency', 'ESG_Score'], # These are the levels
             values='Amount',
             color='ESG_Score',
-            color_discrete_map={
-                'AA': '#238636', 
-                'A': '#2ea043', 
-                'B': '#d29922', 
-                'C': '#f85149',
-                'N/A': '#30363d'
-            },
             template="plotly_dark"
         )
-        fig_sun.update_layout(margin=dict(l=0, r=0, t=0, b=0))
         st.plotly_chart(fig_sun, use_container_width=True)
     else:
-        st.warning("⚠️ Risk Radar Unavailable: Missing ESG metadata columns.")
-        st.info("Please ensure 'mock_data_maker.py' has been run to generate the latest institutional dataset.")
-        # Debugging view for the developer
-        st.write("Available Columns:", list(invoices.columns))
+        st.error(f"Schema Mismatch. Missing 'Company_Code'. Found: {invoices.columns.tolist()}")
 
 # --- TAB 4: AUDIT LEDGER ---
 with tab_audit:
