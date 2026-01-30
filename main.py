@@ -116,8 +116,30 @@ if menu == "📈 Executive Dashboard":
         st.subheader("📅 Cash Flow Forecast")
         months = ["Dec", "Jan", "Feb", "Mar"]
         forecast = [42, 45, 48 + (latency_days/2), 52 + latency_days]
-        fig_forecast = px.line(x=months, y=forecast, markers=True, template="plotly_dark")
-        fig_forecast.update_traces(line_color="#58a6ff", line_width=4)
+        
+        # Create figure with labels
+        fig_forecast = px.line(
+            x=months, 
+            y=forecast, 
+            markers=True, 
+            template="plotly_dark",
+            labels={'x': 'Fiscal Month', 'y': 'Liquidity (M)'} # Defining axis labels
+        )
+        
+        fig_forecast.update_traces(
+            line_color="#58a6ff", 
+            line_width=4,
+            name="Projected Cash"
+        )
+        
+        # Refined axis styling
+        fig_forecast.update_layout(
+            xaxis_title="Reporting Period",
+            yaxis_title="Expected Inflow (USD Millions)",
+            hovermode="x unified",
+            margin=dict(l=20, r=20, t=20, b=20)
+        )
+        
         st.plotly_chart(fig_forecast, use_container_width=True)
 
 # --- TAB 2: ANALYST WORKBENCH ---
