@@ -167,42 +167,99 @@ elif menu == "⚡ Analyst Workbench":
                 else:
                     st.error("❌ No suitable candidates found.")
 
-# --- TAB 3: RISK RADAR (Updated for Enhanced Tooltips) ---
+# --- TAB 3: RISK RADAR (Restored & Enhanced) ---
 elif menu == "🛡️ Risk Radar":
     st.subheader("🌎 Institutional Risk Exposure (ESG Weighted)")
     
     if 'ESG_Score' in invoices.columns and 'Company_Code' in invoices.columns:
-        # Define Weighting Logic
+        # 1. Define Weighting Logic
         rating_weights = {'AAA': 0.05, 'AA': 0.15, 'A': 0.25, 'B': 0.40, 'C': 0.60, 'D': 0.80}
         invoices['Risk_Factor'] = invoices['ESG_Score'].map(rating_weights)
         invoices['Weighted_Risk'] = invoices['Amount'] * invoices['Risk_Factor']
         
         name_col = 'Customer' if 'Customer' in invoices.columns else 'Customer_Name'
         
-        # Enhanced Sunburst with hover_data
+        # 2. Enhanced Sunburst with Full Hover Context
         fig_sun = px.sunburst(
             invoices, 
             path=['Company_Code', 'Currency', name_col, 'ESG_Score'], 
             values='Weighted_Risk',
             color='ESG_Score',
             color_discrete_map={'AAA':'#238636', 'AA':'#2ea043', 'A':'#3fb950', 'B':'#d29922', 'C':'#db6d28', 'D':'#f85149'},
-            # ADDING EXTRA DATA TO HOVER
             hover_data={
-                'Weighted_Risk': ':,.2f', # Format weighted risk
-                'Amount': ':,.2f',        # Show raw invoice amount
-                'Risk_Factor': ':.0%',    # Show the risk multiplier as a percentage
-                'ESG_Score': True         # Ensure rating is visible
+                'Amount': ':,.2f',        # Show raw amount
+                'Weighted_Risk': ':,.2f', # Show risk amount
+                'Risk_Factor': ':.0%',    # Show multiplier
+                'Company_Code': True,
+                'Currency': True
             },
             template="plotly_dark",
             title="Institutional Risk Hierarchy (By Weighted Exposure)"
         )
 
-        # Customizing the hover template for better readability
+        # This ensures the tooltip shows the parent path (Hierarchy) + our custom metrics
         fig_sun.update_traces(
-            hovertemplate="<b>%{label}</b><br>Weighted Risk: %{value:$,.2f}<br>Raw Amount: %{customdata[0]:$,.2f}<br>Risk Multiplier: %{customdata[1]:.0%}"
+            hovertemplate="<b>%{label}</b><br>" + 
+                          "Weighted Risk: %{value:,.2f}<br>" + 
+                          "Raw Amount: %{customdata[0]:,.2f}<br>" + 
+                          "Risk Multiplier: %{customdata[2]:.0%}<br>" +
+                          "Total Path: %{id}"
         )
         
         st.plotly_chart(fig_sun, use_container_width=True)
+
+      # 3. ENHANCED: Detailed Exposure Ledger with Multi-Filter
+        st.divider()
+        st.subheader("📜 Detailed Exposure Ledger")
+        
+        # UI for Filtering
+        expander = st.expander("🔍 Filter & Search Options", expanded=False)
+        with expander:
+            f1, f2, f3 = st.columns(3)
+            with f1:
+                search_query = st.text_input("Search Customer Name", "")
+            with f2:
+                selected_ratings = st.multiselect("Filter by ESG Rating", options=sorted(invoices['ESG_Score'].unique()), default=sorted(invoices['ESG_Score'].unique()))
+            with f3:
+                risk_min, risk_max = st.slider("Weighted Risk Range", 0.0, float(invoices['Weighted_Risk'].max()), (0.0, float(invoices['Weighted_Risk'].max())))
+
+        # Apply Filters to the Dataframe
+        df_filtered = invoices.copy()
+        
+        if search_query:
+            df_filtered = df_filtered[df_filtered[name_col].str.contains(search_query, case=False)]
+        
+        df_filtered = df_filtered[df_filtered['ESG_Score'].isin(selected_ratings)]
+        df_filtered = df_filtered[(df_filtered['Weighted_Risk'] >= risk_min) & (df_filtered['Weighted_Risk'] <= risk_max)]
+
+        # Prepare for Display
+        df_display = df_filtered[[
+            'Company_Code', 'Currency', name_col, 'Amount', 'ESG_Score', 'Risk_Factor', 'Weighted_Risk'
+        ]].copy()
+        
+        # Display with Column Config for better visuals
+        st.dataframe(
+            df_display.sort_values(by='Weighted_Risk', ascending=False),
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Amount": st.column_config.NumberColumn(format="$%.2f"),
+                "Weighted_Risk": st.column_config.NumberColumn(format="$%.2f"),
+                "Risk_Factor": st.column_config.ProgressColumn(
+                    "Risk Intensity",
+                    help="The risk multiplier applied based on ESG Score",
+                    format="%.2f",
+                    min_value=0,
+                    max_value=1
+                ),
+                "ESG_Score": st.column_config.TextColumn("Rating")
+            }
+        )
+        st.caption(f"Showing {len(df_filtered)} of {len(invoices)} exposure records.")
+        
+    else:
+        st.error("Schema Mismatch: Please ensure invoices.csv contains 'Company_Code' and 'ESG_Score'.")
+    
         
 # --- TAB 4: AUDIT LEDGER ---
 elif menu == "📜 Audit Ledger":
