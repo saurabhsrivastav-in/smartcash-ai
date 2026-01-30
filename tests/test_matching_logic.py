@@ -3,60 +3,62 @@ import pandas as pd
 from backend.engine import SmartMatchingEngine
 
 @pytest.fixture
-def setup_engine():
-    """Initializes the engine and mock data for testing."""
-    engine = SmartMatchingEngine()
-    mock_invoices = pd.DataFrame([
-        {'Invoice_ID': 'INV-1001', 'Customer_Name': 'Tesla Inc', 'Amount': 50000, 'Currency': 'USD'},
-        {'Invoice_ID': 'INV-1002', 'Customer_Name': 'Microsoft Corp', 'Amount': 75000, 'Currency': 'USD'},
-        {'Invoice_ID': 'INV-1003', 'Customer_Name': 'SpaceX', 'Amount': 25000, 'Currency': 'EUR'}
-    ])
-    return engine, mock_invoices
+def engine():
+    return SmartMatchingEngine()
 
-def test_exact_match(setup_engine):
-    """Scenario A: Verify 1:1 Exact Match (Reference & Amount)."""
-    engine, df_inv = setup_engine
-    # Simulating a perfect bank credit
-    bank_txn = {'Bank_Ref': 'INV-1001', 'Amount': 50000, 'Currency': 'USD'}
-    
-    results = engine.run_match(bank_txn, df_inv)
-    
-    assert not results.empty
-    assert results.iloc[0]['Invoice_ID'] == 'INV-1001'
-    assert results.iloc[0]['Confidence_Score'] == 100
+@pytest.fixture
+def sample_invoices():
+    """Creates a controlled dataset for testing match accuracy."""
+    return pd.DataFrame({
+        'Invoice_ID': ['INV-001', 'INV-002', 'INV-003'],
+        'Customer_Name': ['Tesla Inc', 'Global Blue SE', 'Saurabh Soft'],
+        'Amount': [50000.00, 1500.00, 2500.00],
+        'Currency': ['USD', 'EUR', 'USD'],
+        'Status': ['Open', 'Open', 'Open'],
+        'ESG_Score': ['AA', 'A', 'B']
+    })
 
-def test_fuzzy_name_match(setup_engine):
-    """Scenario B: Verify Fuzzy Logic when the name is misspelled."""
-    engine, df_inv = setup_engine
-    # 'Tesla' misspelled as 'Tessla' and no Invoice ID provided
-    bank_txn = {'Bank_Ref': 'Tessla Payment', 'Amount': 50000, 'Currency': 'USD'}
+def test_exact_match(engine, sample_invoices):
+    """Test 1: Exact Amount, Currency, and Resolved Alias should yield >95% confidence."""
+    # Using an alias defined in engine.py: "tsla motors gmbh" -> "Tesla Inc"
+    results = engine.run_match(50000.00, "tsla motors gmbh", "USD", sample_invoices)
     
-    results = engine.run_match(bank_txn, df_inv)
-    
-    assert not results.empty
-    assert results.iloc[0]['Invoice_ID'] == 'INV-1001'
-    assert results.iloc[0]['Confidence_Score'] >= 80
+    assert len(results) > 0
+    assert results[0]['Invoice_ID'] == 'INV-001'
+    assert results[0]['confidence'] >= 0.95
+    assert "STP: Automated" in results[0]['status']
 
-def test_short_pay_exception(setup_engine):
-    """Scenario C: Verify handling of partial payments."""
-    engine, df_inv = setup_engine
-    # Correct ID, but the amount is short by 1000
-    bank_txn = {'Bank_Ref': 'INV-1001', 'Amount': 49000, 'Currency': 'USD'}
+def test_bank_fee_tolerance(engine, sample_invoices):
+    """Test 2: A $15 discrepancy should still yield a high-confidence match (80%)."""
+    # $50,000 invoice, but only $49,985 received
+    results = engine.run_match(49985.00, "Tesla Inc", "USD", sample_invoices)
     
-    results = engine.run_match(bank_txn, df_inv)
-    
-    assert not results.empty
-    # It should find the match but flag a variance
-    assert results.iloc[0]['Invoice_ID'] == 'INV-1001'
-    assert results.iloc[0]['Match_Type'] == 'Partial/Exception'
+    assert len(results) > 0
+    assert results[0]['Invoice_ID'] == 'INV-001'
+    # Confidence should be around 0.82 (amt_score 0.8 + name_score 1.0 weighted)
+    assert results[0]['confidence'] >= 0.80 
+    assert "EXCEPTION" in results[0]['status']
 
-def test_no_match_found(setup_engine):
-    """Scenario D: Verify system correctly fails when no data matches."""
-    engine, df_inv = setup_engine
-    bank_txn = {'Bank_Ref': 'Unknown Global Corp', 'Amount': 999999, 'Currency': 'JPY'}
+def test_fuzzy_name_match(engine, sample_invoices):
+    """Test 3: Minor typos in names should be caught by Fuzzy Logic."""
+    # "Saurabh Software" vs "Saurabh Soft"
+    results = engine.run_match(2500.00, "Saurabh Software", "USD", sample_invoices)
     
-    results = engine.run_match(bank_txn, df_inv)
+    assert len(results) > 0
+    assert results[0]['Invoice_ID'] == 'INV-003'
+    assert results[0]['confidence'] > 0.70
+
+def test_currency_mismatch(engine, sample_invoices):
+    """Test 4: Correct amount but wrong currency should result in low confidence."""
+    # Amount matches INV-002 (1500), but currency is USD instead of EUR
+    results = engine.run_match(1500.00, "Global Blue SE", "USD", sample_invoices)
     
-    # Depending on your engine logic, this should return an empty DF or low score
-    if not results.empty:
-        assert results.iloc[0]['Confidence_Score'] < 50
+    # name_score (0.4) + amt_score (0.0) = 0.4 total
+    # The engine filters out anything <= 0.40
+    assert len([r for r in results if r['Invoice_ID'] == 'INV-002' and r['confidence'] > 0.5]) == 0
+
+def test_dso_calculation(engine, sample_invoices):
+    """Test 5: Verify the DSO math."""
+    dso = engine.calculate_dso(sample_invoices)
+    # Total AR = 54000. Total Sales = 54000. DSO = (1/1)*365 = 365.
+    assert dso == 365.0
