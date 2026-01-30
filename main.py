@@ -77,18 +77,23 @@ h_col1, h_col2, h_col3 = st.columns([3, 3, 1])
 with h_col1:
     search_term = st.text_input("🔍 Global Search", key="search_key", placeholder="Search Customer or Invoice ID...")
 with h_col2:
-    chat_term = st.text_input("🤖 AI Assistant", key="chat_key")
+    chat_term = st.text_input("🤖 AI Assistant", key="chat_key", placeholder="Ask me about a customer or invoice...")
 with h_col3:
     st.write(" ")
     st.button("🗑️ Clear All", on_click=handle_clear)
 
 st.divider()
 
-# --- 5. SEARCH & FILTER LOGIC ---
+# --- 5. SEARCH & FILTER LOGIC (UPDATED FOR AI ASSISTANT) ---
 view_df = st.session_state.ledger.copy()
-if search_term:
-    view_df = view_df[view_df['Customer'].str.contains(search_term, case=False) | 
-                     view_df['Invoice_ID'].str.contains(search_term, case=False)]
+
+# Combine search_term and chat_term into a single master filter
+# If either box has text, the application will filter for that string
+combined_query = search_term if search_term else chat_term
+
+if combined_query:
+    view_df = view_df[view_df['Customer'].str.contains(combined_query, case=False) | 
+                     view_df['Invoice_ID'].str.contains(combined_query, case=False)]
 
 with st.sidebar:
     st.header("⚙️ Controls")
