@@ -35,12 +35,13 @@ st.markdown("""
 # --- 2. RESOURCE INITIALIZATION ---
 @st.cache_data
 def load_data():
-    inv = pd.read_csv('data/invoices.csv')
-    bank = pd.read_csv('data/bank_feed.csv')
-    return inv, bank
+    try:
+        inv = pd.read_csv('data/invoices.csv')
+        bank = pd.read_csv('data/bank_feed.csv')
+        return inv, bank
     except Exception as e:
-        st.error(f"⚠️ Data Source Error: {e}")
-        return pd.DataFrame(), pd.DataFrame()    
+        st.error(f"⚠️ Data Source Missing: {e}")
+        return pd.DataFrame(), pd.DataFrame()   
 
 # Persistent Session Objects
 if 'engine' not in st.session_state:
