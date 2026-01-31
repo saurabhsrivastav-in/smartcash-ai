@@ -147,14 +147,16 @@ if menu == "📈 Dashboard":
 
     st.divider()
 
- st.subheader("⏳ Accounts Receivable Ageing Analysis")
+ st.divider()
+
+    st.subheader("⏳ Accounts Receivable Ageing Analysis")
     ov = view_df[view_df['Status'] == 'Overdue'].copy()
     if not ov.empty:
         # Ensure Due_Date is datetime to avoid the TypeError
         ov['Due_Date'] = pd.to_datetime(ov['Due_Date'])
         
         def get_bucket(invoice_date):
-            # Calculate the difference using the 'today' variable defined on line 114
+            # Calculate the difference using the 'today' variable defined earlier
             diff = (today - invoice_date).days
             if diff <= 15: return "0-15"
             elif diff <= 30: return "16-30"
@@ -178,6 +180,8 @@ if menu == "📈 Dashboard":
         st.plotly_chart(fig_age, use_container_width=True)
     else:
         st.info("No overdue items found for the current selection.")
+
+    st.divider() # Keep this aligned too!
 
     st.divider()
 
