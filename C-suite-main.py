@@ -146,19 +146,21 @@ view_df = st.session_state.ledger.copy()
 if search_selection != "Consolidated":
     view_df = view_df[view_df['Customer'] == search_selection]
 
-# View Mode Logic (THE FIX)
+# View Mode Logic (THE FIX: Defining weights for ALL paths)
 if mode == "AI Forecast":
-    # Simulate AI predicting faster collections (reducing DSO) 
-    # and identifying hidden risks in 'Open' invoices
-    view_df['Amount_Remaining'] = view_df['Amount_Remaining'] * 0.98 # Expected haircut
+    # 1. AI Logic: Predict 2% haircut on all values
+    view_df['Amount_Remaining'] = view_df['Amount_Remaining'] * 0.98 
+    # 2. AI Weights: Slightly more optimistic than 'Actuals'
+    weights = {'AAA':0.99, 'AA':0.97, 'A':0.92, 'B':0.85, 'C':0.70, 'D':0.50}
     st.sidebar.warning("🤖 AI Mode: Adjusting for predicted defaults.")
 
 elif mode == "Stress Test":
-    # Simulate a market downturn: ESG scores B-D are weighted much more heavily
+    # 1. Stress Logic: Aggressive risk weighting for downturn
     weights = {'AAA':0.90, 'AA':0.80, 'A':0.70, 'B':0.40, 'C':0.20, 'D':0.05}
     st.sidebar.error("🔥 Stress Test: 20% Market Downturn applied.")
+
 else:
-    # Standard Weights for "Actuals"
+    # 1. Actuals Logic: Standard institutional weights
     weights = {'AAA':0.98, 'AA':0.95, 'A':0.90, 'B':0.80, 'C':0.60, 'D':0.40}
 
 # --- 6. C-SUITE METRICS (Dynamic Calculations) ---
