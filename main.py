@@ -238,7 +238,7 @@ elif menu == "⚡ Workbench":
     st.subheader("⚡ Operational Command")
 t1, t2, t3 = st.tabs(["🧩 AI Matcher", "📩 Dunning Center", "🛠️ Dispute Resolver"])
     
-    with t1:
+with t1:
         st.write("**Intelligent Bank Reconciliation**")
         match_df = st.session_state.bank.copy()
         if 'Customer' in match_df.columns and 'Customer' in st.session_state.ledger.columns:
@@ -251,7 +251,7 @@ t1, t2, t3 = st.tabs(["🧩 AI Matcher", "📩 Dunning Center", "🛠️ Dispute
         else:
             st.error("❌ Column mismatch: Ensure both files have a 'Customer' or 'Payer_Name' column.")
 
-    with t2:
+with t2:
         ov = view_df[view_df['Status'] == 'Overdue']
         if not ov.empty:
             target = st.selectbox("Select Debtor", ov['Customer'].unique())
@@ -289,7 +289,7 @@ Treasury Operations Team"""
             if not upcoming.empty:
                 st.dataframe(upcoming[['Customer', 'Due_Date', 'Amount_Remaining']], use_container_width=True)
                 
-    with t3:
+ with t3:
         c_flag, c_res = st.columns(2)
         with c_flag:
             to_freeze = st.selectbox("Invoice to Freeze", view_df[~view_df['Is_Disputed']]['Invoice_ID'])
