@@ -214,10 +214,71 @@ with tab_velocity:
     st.plotly_chart(fig_v, use_container_width=True)
 
 with tab_entity:
-    st.subheader("🏢 Counterparty Concentration Risk")
-    fig_tree = px.treemap(view_df, path=[px.Constant("Portfolio"), 'Customer'], values='Amount_Remaining', color='ESG_Score', color_discrete_map={'AAA':'#238636', 'AA':'#2ea043', 'A':'#d29922', 'B':'#db6d28', 'C':'#f85149', 'D':'#b62323'})
-    fig_tree.update_layout(template="plotly_dark", margin=dict(t=30, b=10, l=10, r=10))
-    st.plotly_chart(fig_tree, use_container_width=True)
+    st.subheader("🏢 Strategic Entity Risk Profiling")
+    
+    # Pre-processing data for entity intelligence
+    # Calculate average ageing and total volume per customer
+    entity_stats = view_df.copy()
+    entity_stats['Days_Late'] = (pd.to_datetime('2026-01-30') - pd.to_datetime(entity_stats['Due_Date'])).dt.days
+    entity_stats['Days_Late'] = entity_stats['Days_Late'].clip(lower=0) # Only care about overdue days
+    
+    entity_analysis = entity_stats.groupby(['Customer', 'ESG_Score', 'Company_Code']).agg({
+        'Amount_Remaining': 'sum',
+        'Invoice_ID': 'count',
+        'Days_Late': 'mean'
+    }).reset_index()
+
+    col_e1, col_e2 = st.columns([2, 1])
+
+    with col_e1:
+        # 4D Bubble Chart: X=Late Days, Y=Total Value, Size=Invoice Count, Color=ESG Risk
+        fig_bubble = px.scatter(
+            entity_analysis,
+            x="Days_Late",
+            y="Amount_Remaining",
+            size="Invoice_ID",
+            color="ESG_Score",
+            hover_name="Customer",
+            title="Exposure Risk Matrix: Value vs. Collection Delay",
+            color_discrete_map={'AAA':'#238636', 'AA':'#2ea043', 'A':'#d29922', 'B':'#db6d28', 'C':'#f85149', 'D':'#b62323'},
+            labels={"Days_Late": "Avg Days Overdue", "Amount_Remaining": "Total Exposure ($)"},
+            template="plotly_dark"
+        )
+        # Add a "Danger Zone" indicator
+        fig_bubble.add_hrect(y0=1500000, y1=entity_analysis['Amount_Remaining'].max()*1.1, 
+                             fillcolor="red", opacity=0.05, annotation_text="High Value Concentration", annotation_position="top left")
+        
+        st.plotly_chart(fig_bubble, use_container_width=True)
+
+    with col_e2:
+        st.write("#### 🛡️ Top Concentration Risks")
+        # A clean, sorted list of top entities by value
+        top_entities = entity_analysis.sort_values('Amount_Remaining', ascending=False).head(5)
+        
+        for idx, row in top_entities.iterrows():
+            with st.container():
+                st.markdown(f"""
+                <div style="background:#161b22; padding:15px; border-radius:10px; border-left: 5px solid {fig_bubble.layout.colorway[idx % 5] if 'colorway' in fig_bubble.layout else '#58a6ff'}; margin-bottom:10px;">
+                    <h5 style="margin:0;">{row['Customer']}</h5>
+                    <p style="margin:0; font-size:12px; color:#8b949e;">Entity: {row['Company_Code']} | Rating: <b>{row['ESG_Score']}</b></p>
+                    <h4 style="margin:5px 0 0 0; color:#58a6ff;">${row['Amount_Remaining']/1e6:.2f}M</h4>
+                </div>
+                """, unsafe_allow_html=True)
+
+    st.divider()
+    
+    # Sector/Code breakdown for geographical/entity risk
+    st.write("#### 🌍 Regional/Company Code Diversification")
+    fig_bar = px.bar(
+        entity_analysis, 
+        x="Company_Code", 
+        y="Amount_Remaining", 
+        color="ESG_Score",
+        barmode="stack",
+        template="plotly_dark",
+        color_discrete_map={'AAA':'#238636', 'AA':'#2ea043', 'A':'#d29922', 'B':'#db6d28', 'C':'#f85149', 'D':'#b62323'}
+    )
+    st.plotly_chart(fig_bar, use_container_width=True)
 
 with tab_stress:
     st.subheader("Strategic Liquidity Stress Matrix (FX Volatility vs. Hedging)")
