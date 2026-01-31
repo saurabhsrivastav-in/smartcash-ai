@@ -234,6 +234,7 @@ elif menu == "🛡️ Risk Radar":
 
     fig_s.update_layout(height=700, template="plotly_dark")
     st.plotly_chart(fig_s, use_container_width=True)
+
 elif menu == "⚡ Workbench":
     st.subheader("⚡ Operational Command")
 t1, t2, t3 = st.tabs(["🧩 AI Matcher", "📩 Dunning Center", "🛠️ Dispute Resolver"])
@@ -307,7 +308,16 @@ with t3:
                     st.session_state.ledger.at[idx, 'Is_Disputed'] = False
                     st.session_state.audit.insert(0, {"Time": datetime.now().strftime("%H:%M"), "Action": "RESOLVED", "ID": to_resolve, "Detail": "Issue Settled"})
                     st.rerun()
-            else: 
+         else: 
                 st.info("No active disputes.")
+
 elif menu == "📜 Audit":
-    st.table(pd.DataFrame(st.session_state.audit))
+    st.write("### 📜 System Audit Log")
+    if st.session_state.audit:
+        audit_df = pd.DataFrame(st.session_state.audit)
+        st.table(audit_df)
+        if st.button("🗑️ Clear Log"):
+            st.session_state.audit = []
+            st.rerun()
+    else:
+        st.info("No actions logged yet.")
