@@ -84,7 +84,7 @@ with st.sidebar:
     st.header("⚙️ Controls")
     menu = st.radio("Workspace", ["📈 Dashboard", "🛡️ Risk Radar", "⚡ Workbench", "📜 Audit"])
     latency = st.slider("Collection Latency (Days)", 0, 90, 15)
-  if 'Company_Code' in st.session_state.ledger.columns:
+if 'Company_Code' in st.session_state.ledger.columns:
     entities = ["Consolidated"] + list(st.session_state.ledger['Company_Code'].unique())
     ent_f = st.selectbox("Company Entity", entities)
 else:
