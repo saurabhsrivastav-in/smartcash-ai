@@ -235,8 +235,8 @@ elif menu == "🛡️ Risk Radar":
     fig_s.update_layout(height=700, template="plotly_dark")
     st.plotly_chart(fig_s, use_container_width=True)
 elif menu == "⚡ Workbench":
-   st.subheader("⚡ Operational Command")
-    t1, t2, t3 = st.tabs(["🧩 AI Matcher", "📩 Dunning Center", "🛠️ Dispute Resolver"])
+    st.subheader("⚡ Operational Command")
+t1, t2, t3 = st.tabs(["🧩 AI Matcher", "📩 Dunning Center", "🛠️ Dispute Resolver"])
     
     with t1:
         st.write("**Intelligent Bank Reconciliation**")
