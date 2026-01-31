@@ -1,72 +1,76 @@
-# 🚀 SmartCash AI: The Future of Autonomous Treasury
-
-**Author:** Saurabh Srivastav  
-**Product:** Institutional Order-to-Cash (O2C) Orchestration  
-**Target:** Fortune 500 Treasury & Finance Operations  
+# 🚀 SmartCash AI: Pitch Deck
+> **Solving the $Trillion "Last-Mile" Remittance Problem** > **Founder:** Saurabh Srivastav  
+> **Sector:** FinTech / Enterprise SaaS / AI-Automation
 
 ---
 
-## 1. The Problem: The $2.5 Trillion "Liquidity Gap"
-Traditional Treasury operations are bottlenecked by manual reconciliation.
-* **Remittance Chaos:** Bank feeds (Tag 86) rarely match ERP records, forcing analysts to manually bridge data.
-* **DSO Bloat:** Unapplied cash leads to artificially high Days Sales Outstanding (DSO).
-* **Exception Fatigue:** 40%+ of global transactions require human intervention due to "dirty" remittance data.
+## 🟢 Slide 1: The Problem
+### The "Remittance Gap" is a Multi-Billion Dollar Bottleneck.
+
+Institutional Treasury teams are drowning in manual labor because **Bank Data** doesn't talk to **ERP Data**.
+
+* **Bank Feeds:** Arrive as unstructured text (Tag 86/MT942).
+* **ERP Invoices:** Exist as rigid records in SAP/Oracle.
+* **The Result:** 40% of cash is "unapplied," leading to bloated DSO (Days Sales Outstanding) and manual reconciliation errors.
 
 ---
 
-## 2. The Solution: SmartCash AI
-An autonomous middleware layer that uses high-performance fuzzy logic and GenAI to automate the financial "last mile."
+## 🟡 Slide 2: The Solution
+### SmartCash AI: The Autonomous Treasury Engine.
 
-* **High-Velocity Matching:** Uses `thefuzz` (Levenshtein Distance) to identify payers even with misspelled or truncated data.
-* **GenAI Dispute Agent:** Automatically drafts remittance clarification emails when confidence thresholds aren't met.
-* **Stress-Tested Liquidity:** Real-time Numpy-driven simulations to model cash flow under macro-economic latency.
+We provide an orchestration layer that sits between the Bank and the General Ledger to automate cash application.
 
 
 
----
-
-## 3. Product Architecture
-The system is built on a "Waterfall Logic" framework to ensure zero-risk automation.
-
-1.  **Ingestion:** Real-time parsing of SWIFT MT942 bank feeds.
-2.  **The Match:** Logic cascades from Exact → Fuzzy → Collective (Multi-invoice).
-3.  **The Vault:** Every decision is hashed and logged in a SOC2-compliant immutable ledger for auditors.
-
-
+* **Heuristic Engine:** Uses `thefuzz` for 99.9% precise customer identification.
+* **Predictive Modeling:** `SciPy` & `NumPy` forecasting for liquidity stress-testing.
+* **GenAI Agent:** Automatically negotiates and clarifies missing remittance info via LLMs.
 
 ---
 
-## 4. Market Traction & KPIs
-SmartCash AI isn't just a tool; it's a multiplier for finance teams.
+## 🔵 Slide 3: Market Opportunity (TAM)
+### Treasury Management is ripe for Disruption.
 
-| Metric | Industry Standard | SmartCash AI Target |
+* **Total Addressable Market:** $12.1B Treasury Management Software market.
+* **The Gap:** Most legacy tools provide "Visibility" but not "Automation."
+* **Target Segment:** Mid-to-Large enterprises processing >1,000 invoices/month.
+
+---
+
+## 🟣 Slide 4: Competitive Advantage
+### Why SmartCash AI Wins.
+
+| Feature | Legacy Systems | SmartCash AI |
 | :--- | :--- | :--- |
-| **STP Rate** | 35% - 50% | **85% - 95%** |
-| **DSO Reduction** | Baseline | **-5 Days** |
-| **Audit Prep** | Weeks | **Instant (SOC2 Vault)** |
+| **Matching** | Exact String Only | **Fuzzy Heuristics (Levenshtein)** |
+| **Exceptions** | Manual Emailing | **Autonomous GenAI Dunning** |
+| **Audit** | Centralized Database | **SOC2 Immutable Vault (Hashing)** |
+| **Deployment** | 6-Month ERP Integration | **Rapid API/Streamlit Overlay** |
 
 ---
 
-## 5. Risk & Governance: The Institutional Advantage
-Unlike black-box AI, SmartCash provides a **Risk Radar** for institutional oversight:
-* **Currency Exposure:** Real-time visibility across USD, EUR, GBP, and CHF.
-* **ESG Scoring:** High-risk customer flagging based on ESG ratings (AA to C).
-* **Transparency:** Confidence scores provided for every AI-suggested match.
+## 🔴 Slide 5: Product Roadmap
+### From MVP to Institutional Standard.
 
 
 
----
-
-## 6. Roadmap: The Path to Autonomous Finance
-* **Q1 2026:** Launch of Multi-Factor Matching Engine & Executive Dashboard.
-* **Q2 2026:** LLM-driven autonomous remittance scraping from unstructured emails.
-* **Q3 2026:** Full SAP/Oracle BAPI write-back for zero-touch clearing.
+1.  **Phase 1 (Current):** Core Fuzzy-Matching & Streamlit Dashboard.
+2.  **Phase 2 (Q2 2026):** Direct SAP/Oracle API Connectors & Multi-Entity support.
+3.  **Phase 3 (Q4 2026):** Predictive Liquidity "What-If" Stress Simulator.
 
 ---
 
-## 7. The Team
-**Saurabh Srivastav** *Product Manager* *Focus: AI-Driven Financial Engineering & O2C Automation*
+## ⚪ Slide 6: The Ask & Vision
+### Transforming Treasury into a Velocity Hub.
+
+We are seeking strategic partners to pilot SmartCash AI in live production environments.
+
+* **Goal:** Reduce DSO by 4-6 days.
+* **Impact:** Unlock millions in trapped working capital.
 
 ---
 
-**[Explore the Live Demo](https://smartcash-ai-ezywbepvihp9bnvqgndwrb.streamlit.app/)** | **[View Documentation](./docs/PRD.md)**
+### 🔗 Explore the Tech
+[Live Application](https://smartcash-ai-cgumahyfurnnel8ocgbya5.streamlit.app/) | [GitHub Repository](https://github.com/saurabhsrivastav-in/SmartCash-AI) | [Documentation](./docs/BRD.md)
+
+**© 2026 SmartCash AI | Next-Gen Treasury Automation**
