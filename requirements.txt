@@ -24,3 +24,6 @@ python-dateutil>=2.8.2 # ISO 8601 Timestamp parsing for global entities
 # --- ENTERPRISE TESTING & AUDIT ---
 pytest>=8.0.0          # UAT for Match Engine Logic
 pytest-cov>=4.1.0      # Code coverage reporting for SOC2 compliance
+
+fpdf2
+python-pptx
