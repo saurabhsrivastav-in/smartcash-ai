@@ -13,10 +13,11 @@ if 'search_key' not in st.session_state:
 if 'chat_key' not in st.session_state:
     st.session_state.chat_key = ""
 
-# --- 2. DATA ENGINE (FIX FOR ATTRIBUTE ERROR) ---
+# --- 2. DATA ENGINE ---
 @st.cache_data
 def load_institutional_data():
     try:
+        # Load files from the data folder
         inv_df = pd.read_csv("data/invoices.csv")
         bank_df = pd.read_csv("data/bank_feed.csv")
         
@@ -24,7 +25,10 @@ def load_institutional_data():
         bank_df.columns = bank_df.columns.str.strip()
         bank_df = bank_df.rename(columns={
             'Payer_Name': 'Customer', 
-            'Amount_Received': 'Amount'
+            'Amount_Received': 'Amount',
+            'Payer': 'Customer', 
+            'Sender': 'Customer', 
+            'Description': 'Customer'
         })
 
         # 2. Standardize Invoice Columns
@@ -44,32 +48,7 @@ def load_institutional_data():
         
         return inv_df, bank_df
     except Exception as e:
-        st.error(f"⚠️ Error mapping columns: {e}")
-        return pd.DataFrame(), pd.DataFrame()
-
-        # 4. Standardize 'Customer' for the AI Matcher
-        bank_df = bank_df.rename(columns={'Payer': 'Customer', 'Sender': 'Customer', 'Description': 'Customer'})
-
-        # Convert dates
-        inv_df['Due_Date'] = pd.to_datetime(inv_df['Due_Date'])
-        
-        return inv_df, bank_df
-    except Exception as e:
-        st.error(f"Initialization Error: {e}")
-        return pd.DataFrame(), pd.DataFrame()
-        
-        # Sync naming: Repository logic expects 'Amount_Remaining'
-        if 'Amount' in inv_df.columns:
-            inv_df = inv_df.rename(columns={'Amount': 'Amount_Remaining'})
-            
-        # 2. Load your 300+ row Bank Feed file
-        bank_df = pd.read_csv("bank_feed.csv")
-        bank_df['Date'] = pd.to_datetime(bank_df['Date'])
-        bank_df = bank_df.sort_values('Date') # Crucial for the Multi-Year Graph
-
-        return inv_df, bank_df
-    except FileNotFoundError:
-        st.error("CSV files not found. Please ensure bank_feed.csv and invoices.csv are in the root folder.")
+        st.error(f"⚠️ Initialization Error: {e}")
         return pd.DataFrame(), pd.DataFrame()
 
 if 'ledger' not in st.session_state or 'bank' not in st.session_state:
@@ -122,7 +101,6 @@ with st.sidebar:
     menu = st.radio("Workspace", ["📈 Dashboard", "🛡️ Risk Radar", "⚡ Workbench", "📜 Audit"])
     latency = st.slider("Collection Latency (Days)", 0, 90, 15)
     
-    # Check if column exists to prevent KeyError
     if 'Company_Code' in st.session_state.ledger.columns:
         entities = ["Consolidated"] + list(st.session_state.ledger['Company_Code'].unique())
         ent_f = st.selectbox("Company Entity", entities)
@@ -133,7 +111,6 @@ with st.sidebar:
     st.divider()
     stress_test = st.toggle("Enable Stress Loading", help="Simulate high-risk market conditions")
 
-# Process the filter after the sidebar is closed
 if ent_f != "Consolidated":
     view_df = view_df[view_df['Company_Code'] == ent_f]
     
@@ -151,7 +128,6 @@ if menu == "📈 Dashboard":
 
     st.divider()
 
-    # NEW: MULTI-YEAR TREND ANALYSIS
     st.subheader("📈 Multi-Year Liquidity Trend & Forecast")
     quarters = ['Q1 24', 'Q2 24', 'Q3 24', 'Q4 24', 'Q1 25', 'Q2 25', 'Q3 25', 'Q4 25', 'Q1 26 (Est)', 'Q2 26 (Est)', 'Q3 26 (Est)', 'Q4 26 (Est)', 'Q1 27 (Proj)']
     cash_values = [45, 48, 42, 55, 58, 62, 59, 70, liq_pool, liq_pool * 1.1, liq_pool * 1.05, liq_pool * 1.2, liq_pool * 1.25]
@@ -161,8 +137,7 @@ if menu == "📈 Dashboard":
     fig_trend.add_trace(go.Scatter(x=quarters[7:], y=cash_values[7:], mode='lines+markers', name='Forecast', line=dict(color='#238636', width=3, dash='dot')))
     
     fig_trend.update_layout(
-        template="plotly_dark", 
-        height=400,
+        template="plotly_dark", height=400,
         xaxis_title="Time Period (Multi-Year)",
         yaxis_title="Total Liquidity ($ Millions)",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
@@ -174,11 +149,9 @@ if menu == "📈 Dashboard":
     st.subheader("⏳ Accounts Receivable Ageing Analysis")
     ov = view_df[view_df['Status'] == 'Overdue'].copy()
     if not ov.empty:
-        # Ensure Due_Date is datetime to avoid the TypeError
         ov['Due_Date'] = pd.to_datetime(ov['Due_Date'])
         
         def get_bucket(invoice_date):
-            # Calculate the difference using the 'today' variable defined earlier
             diff = (today - invoice_date).days
             if diff <= 15: return "0-15"
             elif diff <= 30: return "16-30"
@@ -190,8 +163,6 @@ if menu == "📈 Dashboard":
             else: return "361+"
 
         ov['Bucket'] = ov['Due_Date'].apply(get_bucket)
-        
-        # Categorical ordering so the X-axis is logical
         order = ["0-15", "16-30", "31-60", "61-90", "91-120", "121-180", "181-360", "361+"]
         age_data = ov.groupby('Bucket')['Amount_Remaining'].sum().reindex(order, fill_value=0).reset_index()
         
@@ -200,19 +171,15 @@ if menu == "📈 Dashboard":
                          color='Amount_Remaining', color_continuous_scale='Turbo')
         fig_age.update_layout(template="plotly_dark", height=450)
         st.plotly_chart(fig_age, use_container_width=True)
-      else: 
-            # Calculate total outstanding balance to show some data
-            total_pending = view_df['Amount_Remaining'].sum()
-            st.info(f"✅ No overdue items found for the current selection.")
-            st.metric("Total Outstanding (Current)", f"${total_pending:,.2f}")
-            
-            # Show the next 5 upcoming payments
-            st.write("📅 **Upcoming Receivables (Next 30 Days):**")
-            upcoming = view_df[view_df['Status'] != 'Overdue'].sort_values('Due_Date').head(5)
-            if not upcoming.empty:
-                st.dataframe(upcoming[['Customer', 'Due_Date', 'Amount_Remaining']], use_container_width=True)
-            else:
-                st.write("No upcoming invoices found.")
+    else: 
+        total_pending = view_df['Amount_Remaining'].sum()
+        st.info(f"✅ No overdue items found for the current selection.")
+        st.metric("Total Outstanding (Current)", f"${total_pending:,.2f}")
+        
+        st.write("📅 **Upcoming Receivables (Next 30 Days):**")
+        upcoming = view_df[view_df['Status'] != 'Overdue'].sort_values('Due_Date').head(5)
+        if not upcoming.empty:
+            st.dataframe(upcoming[['Customer', 'Due_Date', 'Amount_Remaining']], use_container_width=True)
 
     st.divider()
 
@@ -245,56 +212,35 @@ elif menu == "⚡ Workbench":
     with t1:
         st.write("**Intelligent Bank Reconciliation**")
         match_df = st.session_state.bank.copy()
-        
-        # Check if 'Customer' exists in bank feed AND ledger
         if 'Customer' in match_df.columns and 'Customer' in st.session_state.ledger.columns:
             match_df['Suggested_Invoice'] = match_df['Customer'].apply(
                 lambda x: st.session_state.ledger[st.session_state.ledger['Customer'] == x]['Invoice_ID'].values[0] 
                 if not st.session_state.ledger[st.session_state.ledger['Customer'] == x].empty else "No Match"
             )
             st.dataframe(match_df, use_container_width=True)
+            st.info("AI Matcher identified high-confidence links between receipts and open receivables.")
         else:
-            st.error("❌ Column mismatch: Ensure both files have a 'Customer' column.")
-        st.info("AI Matcher identified high-confidence links between receipts and open receivables.")
+            st.error("❌ Column mismatch: Ensure both files have a 'Customer' or 'Payer_Name' column.")
 
     with t2:
-        # 1. Filter for items marked as Overdue
         ov = view_df[view_df['Status'] == 'Overdue']
-        
         if not ov.empty:
             target = st.selectbox("Select Debtor", ov['Customer'].unique())
             inv = ov[ov['Customer'] == target].iloc[0]
             st.markdown("### 📧 Professional Notice Draft")
-            
-            email_body = f"""Subject: URGENT: Payment Overdue for {inv['Customer']} ({inv['Invoice_ID']})
-
-Dear Accounts Payable Team,
-
-This is a formal notice regarding Invoice {inv['Invoice_ID']}, which was due on {inv['Due_Date']}.
-Our records indicate an outstanding balance of {inv['Currency']} {inv['Amount_Remaining']:,.2f}.
-
-Please confirm the payment status or provide a remittance advice by EOD.
-
-Best Regards,
-Treasury Operations Team"""
-
+            email_body = f"Subject: URGENT: Payment Overdue for {inv['Customer']} ({inv['Invoice_ID']})\n\nDear Accounts Payable Team..."
             st.text_area("Final Review", email_body, height=280)
             if st.button("📤 Dispatch Professional Notice"):
                 st.session_state.audit.insert(0, {"Time": datetime.now().strftime("%H:%M"), "Action": "DUNNING", "ID": inv['Invoice_ID'], "Detail": f"Sent to {target}"})
                 st.success("Notice dispatched.")
-        
         else: 
-            # 2. Fallback logic when no overdue items exist
             total_pending = view_df['Amount_Remaining'].sum()
             st.info(f"✅ No overdue items found for the current selection.")
             st.metric("Total Outstanding (Current)", f"${total_pending:,.2f}")
-            
             st.write("📅 **Upcoming Receivables (Next 30 Days):**")
             upcoming = view_df[view_df['Status'] != 'Overdue'].sort_values('Due_Date').head(5)
             if not upcoming.empty:
                 st.dataframe(upcoming[['Customer', 'Due_Date', 'Amount_Remaining']], use_container_width=True)
-            else:
-                st.write("No upcoming invoices found.")
                 
     with t3:
         c_flag, c_res = st.columns(2)
