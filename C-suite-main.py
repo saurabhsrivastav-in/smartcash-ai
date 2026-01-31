@@ -4,6 +4,69 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
+from fpdf import FPDF
+from pptx import Presentation
+from pptx.util import Inches, Pt
+from io import BytesIO
+
+# --- REPORT GENERATION ENGINES ---
+
+def generate_pdf(df, mode_name, liquidity):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(190, 10, "SmartCash AI: Executive Treasury Report", ln=True, align='C')
+    pdf.set_font("Arial", size=12)
+    pdf.cell(190, 10, f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True, align='C')
+    pdf.ln(10)
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(100, 10, f"Scenario Mode: {mode_name}")
+    pdf.cell(90, 10, f"Net Liquidity: ${liquidity/1e6:.2f}M", ln=True)
+    pdf.ln(5)
+    
+    # Table Header
+    pdf.set_fill_color(30, 36, 61)
+    pdf.set_text_color(255, 255, 255)
+    pdf.cell(40, 10, "Invoice", 1, 0, 'C', True)
+    pdf.cell(60, 10, "Customer", 1, 0, 'C', True)
+    pdf.cell(45, 10, "Amount", 1, 0, 'C', True)
+    pdf.cell(45, 10, "Due Date", 1, 1, 'C', True)
+    
+    # Table Body (Top 15 items for brevity)
+    pdf.set_text_color(0, 0, 0)
+    for _, row in df.head(15).iterrows():
+        pdf.cell(40, 10, str(row['Invoice_ID']), 1)
+        pdf.cell(60, 10, str(row['Customer']), 1)
+        pdf.cell(45, 10, f"{row['Amount_Remaining']:,.2f}", 1)
+        pdf.cell(45, 10, str(row['Due_Date']), 1, 1)
+        
+    return pdf.output(dest='S')
+
+def generate_pptx(df, mode_name, liquidity):
+    prs = Presentation()
+    slide = prs.slides.add_slide(prs.slide_layouts[5]) # Title Only layout
+    
+    # Title
+    title = slide.shapes.title
+    title.text = f"Executive Summary: {mode_name} Scenario"
+    
+    # Add KPI Box
+    txBox = slide.shapes.add_textbox(Inches(1), Inches(1.5), Inches(8), Inches(2))
+    tf = txBox.text_frame
+    p = tf.add_paragraph()
+    p.text = f"Total Risk-Adjusted Liquidity: ${liquidity/1e6:.2f}M"
+    p.font.bold = True
+    p.font.size = Pt(32)
+
+    # Add Data Summary
+    p2 = tf.add_paragraph()
+    p2.text = f"Portfolio analyzed across {len(df)} institutional invoices."
+    p2.font.size = Pt(18)
+    
+    binary_output = BytesIO()
+    prs.save(binary_output)
+    return binary_output.getvalue()
 
 # --- 1. STABILITY INITIALIZATION ---
 if 'audit' not in st.session_state:
@@ -177,3 +240,29 @@ with cols[1]:
 with cols[2]:
     if st.button("📩 Escalated Board Report", use_container_width=True):
         st.toast("Executive Summary PDF generated and sent.")
+
+# --- 9. UI DOWNLOAD SECTION (Place at bottom of script) ---
+
+st.divider()
+st.subheader("📤 Export Intelligence")
+d_col1, d_col2 = st.columns(2)
+
+with d_col1:
+    pdf_data = generate_pdf(view_df, mode, net_collectible)
+    st.download_button(
+        label="📥 Download Executive PDF",
+        data=pdf_data,
+        file_name=f"SmartCash_Report_{mode}.pdf",
+        mime="application/pdf",
+        use_container_width=True
+    )
+
+with d_col2:
+    pptx_data = generate_pptx(view_df, mode, net_collectible)
+    st.download_button(
+        label="📊 Download Board PPTX",
+        data=pptx_data,
+        file_name=f"SmartCash_Deck_{mode}.pptx",
+        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        use_container_width=True
+    )
