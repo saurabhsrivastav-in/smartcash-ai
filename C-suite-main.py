@@ -45,8 +45,8 @@ def generate_pdf(df, mode_name, liquidity):
         
     # CRITICAL FIX: Convert string output to bytes
     pdf_output = pdf.output()
-    if isinstance(pdf_output, str):
-        return pdf_output.encode('latin-1')
+   if isinstance(pdf_output, (bytearray, str)):
+        return bytes(pdf_output, 'latin-1') if isinstance(pdf_output, str) else bytes(pdf_output)
     return pdf_output
 
 def generate_pptx(df, mode_name, liquidity):
@@ -254,21 +254,30 @@ st.subheader("📤 Export Intelligence")
 d_col1, d_col2 = st.columns(2)
 
 with d_col1:
-    pdf_data = generate_pdf(view_df, mode, net_collectible)
-    st.download_button(
-        label="📥 Download Executive PDF",
-        data=pdf_data,
-        file_name=f"SmartCash_Report_{mode}.pdf",
-        mime="application/pdf",
-        use_container_width=True
-    )
+    # We use a unique key and ensure generate_pdf returns clean bytes
+    try:
+        pdf_bytes = generate_pdf(view_df, mode, net_collectible)
+        st.download_button(
+            label="📥 Download Executive PDF",
+            data=pdf_bytes,
+            file_name=f"SmartCash_Report_{mode}.pdf",
+            mime="application/pdf",
+            use_container_width=True,
+            key="pdf_download_btn"
+        )
+    except Exception as e:
+        st.error("PDF Engine encountered a buffer error. Please refresh.")
 
 with d_col2:
-    pptx_data = generate_pptx(view_df, mode, net_collectible)
-    st.download_button(
-        label="📊 Download Board PPTX",
-        data=pptx_data,
-        file_name=f"SmartCash_Deck_{mode}.pptx",
-        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        use_container_width=True
-    )
+    try:
+        pptx_bytes = generate_pptx(view_df, mode, net_collectible)
+        st.download_button(
+            label="📊 Download Board PPTX",
+            data=pptx_bytes,
+            file_name=f"SmartCash_Deck_{mode}.pptx",
+            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            use_container_width=True,
+            key="pptx_download_btn"
+        )
+    except Exception as e:
+        st.error("PPTX Engine encountered a buffer error.")
