@@ -198,9 +198,8 @@ if menu == "📈 Dashboard":
 
 elif menu == "🛡️ Risk Radar":
     weights = {'AAA':0.05, 'AA':0.1, 'A':0.2, 'B':0.4, 'C':0.6, 'D':0.9}
-    view_df['Exposure'] = view_df['Amount_Remaining'] * view_df['ESG_Score'].map(weights)
     
-# 1. Data Hardening: Ensure Path columns have no NaNs (Plotly fails on these)
+    # 1. Data Hardening: Ensure Path columns have no NaNs (Plotly fails on these)
     for col in ['Company_Code', 'Currency', 'ESG_Score', 'Customer']:
         view_df[col] = view_df[col].astype(str).replace('nan', 'Unknown')
     
@@ -235,8 +234,6 @@ elif menu == "🛡️ Risk Radar":
 
     fig_s.update_layout(height=700, template="plotly_dark")
     st.plotly_chart(fig_s, use_container_width=True)
-    
-
 elif menu == "⚡ Workbench":
     st.subheader("⚡ Operational Command")
     t1, t2, t3 = st.tabs(["🧩 AI Matcher", "📩 Dunning Center", "🛠️ Dispute Resolver"])
