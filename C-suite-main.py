@@ -14,7 +14,7 @@ from io import BytesIO
 def generate_pdf(df, mode_name, liquidity):
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Helvetica", 'B', 16) # Use Helvetica for better compatibility
+    pdf.set_font("Helvetica", 'B', 16)
     pdf.cell(190, 10, "SmartCash AI: Executive Treasury Report", ln=True, align='C')
     
     pdf.set_font("Helvetica", size=10)
@@ -39,14 +39,16 @@ def generate_pdf(df, mode_name, liquidity):
     pdf.set_font("Helvetica", size=10)
     for _, row in df.head(20).iterrows():
         pdf.cell(40, 10, str(row['Invoice_ID']), 1)
-        pdf.cell(60, 10, str(row['Customer'])[:25], 1) # Trim long names
+        pdf.cell(60, 10, str(row['Customer'])[:25], 1)
         pdf.cell(45, 10, f"{row['Amount_Remaining']:,.2f}", 1)
         pdf.cell(45, 10, str(row['Due_Date']), 1, 1)
         
-    # CRITICAL FIX: Convert string output to bytes
+    # --- INDENTATION FIXED BELOW ---
     pdf_output = pdf.output()
-   if isinstance(pdf_output, (bytearray, str)):
-        return bytes(pdf_output, 'latin-1') if isinstance(pdf_output, str) else bytes(pdf_output)
+    if isinstance(pdf_output, (bytearray, str)):
+        if isinstance(pdf_output, str):
+            return pdf_output.encode('latin-1')
+        return bytes(pdf_output)
     return pdf_output
 
 def generate_pptx(df, mode_name, liquidity):
