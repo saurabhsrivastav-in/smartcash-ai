@@ -80,7 +80,6 @@ def generate_pptx(df, mode_name, liquidity):
 if 'audit' not in st.session_state:
     st.session_state.audit = []
 if 'ledger' not in st.session_state:
-    # Initial data generation
     customers = ['Tesla', 'EcoEnergy', 'GlobalBlue', 'TechRetail', 'Quantum Dyn', 'Alpha Log', 'Nordic Oil', 'Sino Tech', 'Indo Power', 'Euro Mart']
     entities = ['1000 (US)', '2000 (EU)', '3000 (UK)']
     currencies = {'1000 (US)': 'USD', '2000 (EU)': 'EUR', '3000 (UK)': 'GBP'}
@@ -89,8 +88,10 @@ if 'ledger' not in st.session_state:
     inv_data = []
     for i in range(300):
         ent = np.random.choice(entities)
-        amt = np.random.uniform(50000, 2500000)
-        due = datetime(2026, 1, 30) - timedelta(days=np.random.randint(-30, 600))
+        # FIX 1: Increase the range to 10M - 35M
+        amt = np.random.uniform(10000000, 35000000) 
+        
+        due = datetime(2026, 1, 30) - timedelta(days=np.random.randint(-30, 90))
         inv_data.append({
             'Invoice_ID': f"INV-{1000+i}",
             'Company_Code': ent,
