@@ -217,13 +217,10 @@ with tab_entity:
     st.subheader("🏢 Strategic Entity Risk Profiling")
     st.markdown("---")
     
-    # Pre-processing data for entity intelligence
     risk_colors = {'AAA':'#238636', 'AA':'#2ea043', 'A':'#d29922', 'B':'#db6d28', 'C':'#f85149', 'D':'#b62323'}
-    
     entity_stats = view_df.copy()
-    entity_stats['Due_Date_DT'] = pd.to_datetime(entity_stats['Due_Date'])
-    entity_stats['Days_Late'] = (pd.to_datetime('2026-01-30') - entity_stats['Due_Date_DT']).dt.days
-    entity_stats['Days_Late'] = entity_stats['Days_Late'].clip(lower=0) 
+    entity_stats['Due_DT'] = pd.to_datetime(entity_stats['Due_Date'])
+    entity_stats['Days_Late'] = (pd.to_datetime('2026-01-30') - entity_stats['Due_DT']).dt.days.clip(lower=0)
     
     entity_analysis = entity_stats.groupby(['Customer', 'ESG_Score', 'Company_Code']).agg({
         'Amount_Remaining': 'sum',
@@ -231,59 +228,71 @@ with tab_entity:
         'Days_Late': 'mean'
     }).reset_index()
 
-    # --- TOP ROW: Behavioral Matrix & Priority Cards ---
-    col_e1, col_e2 = st.columns([2, 1])
+    # --- ENLARGED LAYOUT: 3:1 Ratio ---
+    col_matrix, col_cards = st.columns([3, 1])
 
-    with col_e1:
-        st.write("#### 🎯 Exposure vs. Collection Delay")
-        # 4D Bubble Chart
+    with col_matrix:
+        st.write("#### 🎯 Strategic Risk Matrix")
         fig_bubble = px.scatter(
             entity_analysis,
             x="Days_Late",
             y="Amount_Remaining",
-            size="Invoice_ID",
+            size="Amount_Remaining",
             color="ESG_Score",
             hover_name="Customer",
             color_discrete_map=risk_colors,
             labels={"Days_Late": "Avg Days Overdue", "Amount_Remaining": "Total Exposure ($)"},
             template="plotly_dark",
-            size_max=40
+            size_max=60 
         )
         
-        # Quadrant Lines for decision making
-        fig_bubble.add_vline(x=30, line_dash="dash", line_color="#f85149", opacity=0.6, annotation_text="Critical Delay")
-        fig_bubble.add_hrect(y0=1500000, y1=entity_analysis['Amount_Remaining'].max()*1.2, 
-                             fillcolor="red", opacity=0.05, annotation_text="HIGH VALUE AT RISK", annotation_position="top left")
+        fig_bubble.update_layout(
+            height=650, 
+            margin=dict(l=20, r=20, t=40, b=20),
+            xaxis=dict(gridcolor="#30363d"),
+            yaxis=dict(gridcolor="#30363d")
+        )
         
-        st.plotly_chart(fig_bubble, use_container_width=True, key="entity_bubble_chart_v3")
+        fig_bubble.add_vline(x=30, line_dash="dash", line_color="#f85149", annotation_text="30D Threshold")
+        fig_bubble.add_hrect(y0=total_val*0.1, y1=entity_analysis['Amount_Remaining'].max()*1.2, 
+                             fillcolor="red", opacity=0.05, annotation_text="CONCENTRATION LIMIT")
+        
+        st.plotly_chart(fig_bubble, use_container_width=True, key="entity_bubble_enlarged")
 
-    with col_e2:
-        st.write("#### 🛡️ Top Concentration Risks")
-        top_entities = entity_analysis.sort_values('Amount_Remaining', ascending=False).head(4)
+    with col_cards:
+        st.write("#### 🛡️ Priority Watchlist")
+        top_risks = entity_analysis.sort_values(by='Amount_Remaining', ascending=False).head(5)
         
-        for _, row in top_entities.iterrows():
+        for _, row in top_risks.iterrows():
             border_color = risk_colors.get(row['ESG_Score'], '#58a6ff')
-            
             st.markdown(f"""
-            <div style="background:#161b22; padding:15px; border-radius:10px; border-left: 6px solid {border_color}; border-top: 1px solid #30363d; margin-bottom:12px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: bold; font-size: 16px; color: #f0f6fc;">{row['Customer']}</span>
-                    <span style="background: {border_color}; color: white; padding: 1px 8px; border-radius: 12px; font-size: 11px;">{row['ESG_Score']}</span>
-                </div>
-                <div style="margin-top: 10px; display:flex; justify-content:space-between;">
-                    <div>
-                        <p style="margin:0; font-size:11px; color:#8b949e;">TOTAL EXPOSURE</p>
-                        <h4 style="margin:0; color:#58a6ff;">${row['Amount_Remaining']/1e6:.2f}M</h4>
-                    </div>
-                    <div style="text-align: right;">
-                        <p style="margin:0; font-size:11px; color:#8b949e;">AVG DELAY</p>
-                        <h4 style="margin:0; color:{'#f85149' if row['Days_Late'] > 30 else '#c9d1d9'};">{int(row['Days_Late'])} Days</h4>
-                    </div>
-                </div>
+            <div style="background:#161b22; padding:12px; border-radius:10px; border-left: 5px solid {border_color}; margin-bottom:10px; border-top: 1px solid #30363d;">
+                <p style="margin:0; font-weight:bold; font-size:14px;">{row['Customer']}</p>
+                <p style="margin:0; font-size:18px; color:#58a6ff; font-weight:800;">${row['Amount_Remaining']/1e6:.2f}M</p>
+                <p style="margin:0; font-size:11px; color:#8b949e;">{int(row['Days_Late'])} Days Overdue</p>
             </div>
             """, unsafe_allow_html=True)
 
-    st.markdown("---")
+    st.divider()
+    b_col1, b_col2 = st.columns(2)
+    with b_col1:
+        st.write("#### 🌍 Regional Allocation")
+        fig_reg = px.bar(entity_analysis, x="Company_Code", y="Amount_Remaining", color="ESG_Score", color_discrete_map=risk_colors, template="plotly_dark")
+        st.plotly_chart(fig_reg, use_container_width=True, key="reg_bar_vfinal")
+    with b_col2:
+        st.write("#### 📊 Portfolio Rating Mix")
+        fig_pie = px.pie(entity_analysis, names="ESG_Score", values="Amount_Remaining", hole=0.5, color="ESG_Score", color_discrete_map=risk_colors, template="plotly_dark")
+        st.plotly_chart(fig_pie, use_container_width=True, key="pie_final_vfinal")
+
+with tab_stress:
+    st.subheader("Strategic Liquidity Stress Matrix (FX Volatility vs. Hedging)")
+    fx_range = np.array([-10, -5, 0, 5, 10])
+    hedge_range = np.array([0, 25, 50, 75, 100])
+    base_liq = net_collectible / 1e6
+    z_data = [[round(base_liq * (1 + (fx/100) * (1 - (h/100))), 2) for h in hedge_range] for fx in fx_range]
+    fig_h = go.Figure(data=go.Heatmap(z=z_data, x=[f"{h}% Hedge" for h in hedge_range], y=[f"{fx}% FX Vol" for fx in fx_range], colorscale='RdYlGn', text=z_data, texttemplate="$%{text}M"))
+    fig_h.update_layout(template="plotly_dark", height=450)
+    st.plotly_chart(fig_h, use_container_width=True, key="stress_heatmap")
     
     # --- BOTTOM ROW: Regional Diversification & Volume Distribution ---
     col_b1, col_b2 = st.columns([1, 1])
