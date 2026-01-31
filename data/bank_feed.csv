@@ -408,7 +408,6 @@ TXN-7706,1000,Quantum Dynamics,12450.75,USD,2024-11-01,Unreconciled
 TXN-7801,1000,Tesla Inc,50000.00,USD,2026-01-20,Unreconciled
 TXN-7901,2000,Nordic Oil,410000.00,EUR,2026-01-10,Unreconciled
 TXN-8001,3000,Sino Tech,240000.00,GBP,2026-01-25,Unreconciled
-Transaction_ID,Company_Code,Payer_Name,Amount_Received,Currency,Date,Status
 TXN-8000,3000,Alpha Logistics,136533.75,GBP,2024-02-08,Reconciled
 TXN-8001,1000,EcoEnergy,255843.3,GBP,2024-02-03,Reconciled
 TXN-8002,1000,Indo Power,447941.76,USD,2024-11-20,Reconciled
