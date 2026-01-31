@@ -200,20 +200,30 @@ elif menu == "🛡️ Risk Radar":
     weights = {'AAA':0.05, 'AA':0.1, 'A':0.2, 'B':0.4, 'C':0.6, 'D':0.9}
     view_df['Exposure'] = view_df['Amount_Remaining'] * view_df['ESG_Score'].map(weights)
     
-    # 1. Add a temporary column for tooltips (Amount)
-    view_df['Amount'] = view_df['Amount_Remaining'] / 1e6
+    # 1. Calculate Amount in Millions
+    view_df['Amount_M'] = view_df['Amount_Remaining'] / 1_000_000
 
-    # 2. Update the sunburst call with hover_data
-    fig_s = px.sunburst(view_df, path=['Company_Code', 'Currency', 'ESG_Score', 'Customer'], 
-                        values='Exposure', color='ESG_Score',
-                        color_discrete_map={'AAA':'#238636', 'AA':'#2ea043', 'A':'#d29922', 'B':'#db6d28', 'C':'#f85149', 'D':'#b62323'},
-                        hover_data={'Amount': ':,.2f'}) # Pass the amount-unit column
+    # 2. Build Sunburst - Passing 'Amount_M' as the first item in the hover_data list
+    fig_s = px.sunburst(
+        view_df, 
+        path=['Company_Code', 'Currency', 'ESG_Score', 'Customer'], 
+        values='Exposure', 
+        color='ESG_Score',
+        color_discrete_map={
+            'AAA':'#238636', 'AA':'#2ea043', 'A':'#d29922', 
+            'B':'#db6d28', 'C':'#f85149', 'D':'#b62323'
+        },
+        hover_data=['Amount_M'] # This forces Amount_M into customdata[0]
+    )
     
-    # 3. Refine the hover template
-    # %{label} automatically captures the Company Name (Customer) at the leaf level
-    # customdata[0] captures the Amount column added above
+    # 3. Explicitly format the hover template
+    # %{label} = The name of the segment (e.g., Tesla Inc)
+    # %{customdata[0]} = The aggregated Amount_M for that segment
+    # %{value} = The Risk Exposure
     fig_s.update_traces(
-        hovertemplate="<b>%{label}</b><br>Total Value: $%{customdata[0]}M<br>Risk Exposure: $%{value:,.2f}<extra></extra>"
+        hovertemplate="<b>%{label}</b><br>" + 
+                      "Total Value: $%{customdata[0]:,.2f}M<br>" + 
+                      "Risk Exposure: $%{value:,.2f}<extra></extra>"
     )
 
     fig_s.update_layout(height=700, template="plotly_dark")
