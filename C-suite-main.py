@@ -217,10 +217,10 @@ with tab_entity:
     st.subheader("🏢 Strategic Entity Risk Profiling")
     
     # Pre-processing data for entity intelligence
-    # Calculate average ageing and total volume per customer
     entity_stats = view_df.copy()
-    entity_stats['Days_Late'] = (pd.to_datetime('2026-01-30') - pd.to_datetime(entity_stats['Due_Date'])).dt.days
-    entity_stats['Days_Late'] = entity_stats['Days_Late'].clip(lower=0) # Only care about overdue days
+    entity_stats['Due_Date_DT'] = pd.to_datetime(entity_stats['Due_Date'])
+    entity_stats['Days_Late'] = (pd.to_datetime('2026-01-30') - entity_stats['Due_Date_DT']).dt.days
+    entity_stats['Days_Late'] = entity_stats['Days_Late'].clip(lower=0) 
     
     entity_analysis = entity_stats.groupby(['Customer', 'ESG_Score', 'Company_Code']).agg({
         'Amount_Remaining': 'sum',
@@ -228,10 +228,13 @@ with tab_entity:
         'Days_Late': 'mean'
     }).reset_index()
 
+    # Define a reliable color map for the UI cards
+    risk_colors = {'AAA':'#238636', 'AA':'#2ea043', 'A':'#d29922', 'B':'#db6d28', 'C':'#f85149', 'D':'#b62323'}
+
     col_e1, col_e2 = st.columns([2, 1])
 
     with col_e1:
-        # 4D Bubble Chart: X=Late Days, Y=Total Value, Size=Invoice Count, Color=ESG Risk
+        # 4D Bubble Chart
         fig_bubble = px.scatter(
             entity_analysis,
             x="Days_Late",
@@ -240,32 +243,51 @@ with tab_entity:
             color="ESG_Score",
             hover_name="Customer",
             title="Exposure Risk Matrix: Value vs. Collection Delay",
-            color_discrete_map={'AAA':'#238636', 'AA':'#2ea043', 'A':'#d29922', 'B':'#db6d28', 'C':'#f85149', 'D':'#b62323'},
+            color_discrete_map=risk_colors,
             labels={"Days_Late": "Avg Days Overdue", "Amount_Remaining": "Total Exposure ($)"},
             template="plotly_dark"
         )
-        # Add a "Danger Zone" indicator
-        fig_bubble.add_hrect(y0=1500000, y1=entity_analysis['Amount_Remaining'].max()*1.1, 
-                             fillcolor="red", opacity=0.05, annotation_text="High Value Concentration", annotation_position="top left")
+        
+        # Add visual quadrants for executive decision making
+        fig_bubble.add_vline(x=30, line_dash="dash", line_color="gray", opacity=0.5)
+        fig_bubble.add_hrect(y0=1500000, y1=entity_analysis['Amount_Remaining'].max()*1.2, 
+                             fillcolor="red", opacity=0.05, annotation_text="CRITICAL CONCENTRATION", annotation_position="top left")
         
         st.plotly_chart(fig_bubble, use_container_width=True)
 
     with col_e2:
         st.write("#### 🛡️ Top Concentration Risks")
-        # A clean, sorted list of top entities by value
         top_entities = entity_analysis.sort_values('Amount_Remaining', ascending=False).head(5)
         
-        for idx, row in top_entities.iterrows():
-            with st.container():
-                st.markdown(f"""
-                <div style="background:#161b22; padding:15px; border-radius:10px; border-left: 5px solid {fig_bubble.layout.colorway[idx % 5] if 'colorway' in fig_bubble.layout else '#58a6ff'}; margin-bottom:10px;">
-                    <h5 style="margin:0;">{row['Customer']}</h5>
-                    <p style="margin:0; font-size:12px; color:#8b949e;">Entity: {row['Company_Code']} | Rating: <b>{row['ESG_Score']}</b></p>
+        for _, row in top_entities.iterrows():
+            # Use the ESG_Score to pull the correct color from our risk_colors map
+            border_color = risk_colors.get(row['ESG_Score'], '#58a6ff')
+            
+            st.markdown(f"""
+            <div style="background:#161b22; padding:15px; border-radius:10px; border-left: 5px solid {border_color}; margin-bottom:10px;">
+                <h5 style="margin:0;">{row['Customer']}</h5>
+                <p style="margin:0; font-size:12px; color:#8b949e;">Entity: {row['Company_Code']} | Rating: <b>{row['ESG_Score']}</b></p>
+                <div style="display:flex; justify-content:space-between; align-items:baseline;">
                     <h4 style="margin:5px 0 0 0; color:#58a6ff;">${row['Amount_Remaining']/1e6:.2f}M</h4>
+                    <span style="font-size:12px; color:{border_color};">{int(row['Days_Late'])} Days Late</span>
                 </div>
-                """, unsafe_allow_html=True)
+            </div>
+            """, unsafe_allow_html=True)
 
     st.divider()
+    
+    # Geographical/Company Code Diversification
+    st.write("#### 🌍 Regional/Company Code Diversification")
+    fig_bar = px.bar(
+        entity_analysis, 
+        x="Company_Code", 
+        y="Amount_Remaining", 
+        color="ESG_Score",
+        barmode="stack",
+        template="plotly_dark",
+        color_discrete_map=risk_colors
+    )
+    st.plotly_chart(fig_bar, use_container_width=True)
     
     # Sector/Code breakdown for geographical/entity risk
     st.write("#### 🌍 Regional/Company Code Diversification")
