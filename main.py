@@ -17,20 +17,25 @@ if 'chat_key' not in st.session_state:
 @st.cache_data
 def load_institutional_data():
     try:
-        # Update these paths to include the 'data/' folder
         inv_df = pd.read_csv("data/invoices.csv")
         bank_df = pd.read_csv("data/bank_feed.csv")
         
-        # ... rest of your processing logic ...
-        inv_df['Due_Date'] = pd.to_datetime(inv_df['Due_Date'])
-        bank_df['Date'] = pd.to_datetime(bank_df['Date'])
-        
-        if 'Amount' in inv_df.columns:
-            inv_df = inv_df.rename(columns={'Amount': 'Amount_Remaining'})
-            
+        # 1. Clean whitespace from headers
+        inv_df.columns = inv_df.columns.str.strip()
+        bank_df.columns = bank_df.columns.str.strip()
+
+        # 2. Harmonize Bank Feed: Ensure 'Customer' column exists
+        # Add common variations found in banking exports
+        bank_rename_map = {'Payer': 'Customer', 'Client': 'Customer', 'Sender': 'Customer', 'Description': 'Customer'}
+        bank_df = bank_df.rename(columns=bank_rename_map)
+
+        # 3. Harmonize Invoices: Ensure 'Amount_Remaining' exists
+        inv_rename_map = {'Amount': 'Amount_Remaining', 'Balance': 'Amount_Remaining'}
+        inv_df = inv_df.rename(columns=inv_rename_map)
+
         return inv_df, bank_df
-    except FileNotFoundError:
-        st.error("⚠️ Files still not found. Check if the folder is named 'data' (lowercase).")
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
         return pd.DataFrame(), pd.DataFrame()
         
         # Sync naming: Repository logic expects 'Amount_Remaining'
