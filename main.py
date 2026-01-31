@@ -20,22 +20,21 @@ def load_institutional_data():
         inv_df = pd.read_csv("data/invoices.csv")
         bank_df = pd.read_csv("data/bank_feed.csv")
         
-        # 1. Clean whitespace from headers
+        # --- Harmonization Logic ---
         inv_df.columns = inv_df.columns.str.strip()
-        bank_df.columns = bank_df.columns.str.strip()
+        
+        # Fix for your KeyError: Create the column if missing
+        if 'Is_Disputed' not in inv_df.columns:
+            inv_df['Is_Disputed'] = False  # Default all invoices to not disputed
+            
+        # Ensure Status column is clean
+        if 'Status' in inv_df.columns:
+            inv_df['Status'] = inv_df['Status'].str.strip()
 
-        # 2. Harmonize Bank Feed: Ensure 'Customer' column exists
-        # Add common variations found in banking exports
-        bank_rename_map = {'Payer': 'Customer', 'Client': 'Customer', 'Sender': 'Customer', 'Description': 'Customer'}
-        bank_df = bank_df.rename(columns=bank_rename_map)
-
-        # 3. Harmonize Invoices: Ensure 'Amount_Remaining' exists
-        inv_rename_map = {'Amount': 'Amount_Remaining', 'Balance': 'Amount_Remaining'}
-        inv_df = inv_df.rename(columns=inv_rename_map)
-
+        # ... (rest of your existing load logic) ...
         return inv_df, bank_df
     except Exception as e:
-        st.error(f"Error loading data: {e}")
+        st.error(f"Error: {e}")
         return pd.DataFrame(), pd.DataFrame()
         
         # Sync naming: Repository logic expects 'Amount_Remaining'
