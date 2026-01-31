@@ -293,12 +293,17 @@ Treasury Operations Team"""
 with t3:
         c_flag, c_res = st.columns(2)
         with c_flag:
-            to_freeze = st.selectbox("Invoice to Freeze", view_df[~view_df['Is_Disputed']]['Invoice_ID'])
-            if st.button("🚩 Freeze Invoice"):
-                idx = st.session_state.ledger.index[st.session_state.ledger['Invoice_ID'] == to_freeze][0]
-                st.session_state.ledger.at[idx, 'Is_Disputed'] = True
-                st.session_state.audit.insert(0, {"Time": datetime.now().strftime("%H:%M"), "Action": "DISPUTE_FLAG", "ID": to_freeze, "Detail": "Manual Dispute"})
-                st.rerun()
+            not_disputed = view_df[~view_df['Is_Disputed']]
+            if not not_disputed.empty:
+                to_freeze = st.selectbox("Invoice to Freeze", not_disputed['Invoice_ID'])
+                if st.button("🚩 Freeze Invoice"):
+                    idx = st.session_state.ledger.index[st.session_state.ledger['Invoice_ID'] == to_freeze][0]
+                    st.session_state.ledger.at[idx, 'Is_Disputed'] = True
+                    st.session_state.audit.insert(0, {"Time": datetime.now().strftime("%H:%M"), "Action": "DISPUTE_FLAG", "ID": to_freeze, "Detail": "Manual Dispute"})
+                    st.rerun()
+            else:
+                st.info("No invoices available to freeze.")
+                
         with c_res:
             disputed = view_df[view_df['Is_Disputed']]
             if not disputed.empty:
@@ -308,7 +313,7 @@ with t3:
                     st.session_state.ledger.at[idx, 'Is_Disputed'] = False
                     st.session_state.audit.insert(0, {"Time": datetime.now().strftime("%H:%M"), "Action": "RESOLVED", "ID": to_resolve, "Detail": "Issue Settled"})
                     st.rerun()
-         else: 
+            else: 
                 st.info("No active disputes.")
 
 elif menu == "📜 Audit":
