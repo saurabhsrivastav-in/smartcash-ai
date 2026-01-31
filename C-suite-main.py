@@ -183,58 +183,49 @@ m4.metric("Capital at Risk", f"${((total_val - net_collectible)/1e6):.2f}M",
           delta="Increased" if mode == "Stress Test" else "Stable", delta_color="inverse")
 
 # --- 7. GRAPHICAL INTELLIGENCE ---
-tab_charts, tab_stress = st.tabs(["📊 Exposure Analytics", "🔥 Stress Matrix"])
+tab_charts, tab_velocity, tab_entity, tab_stress = st.tabs(["📊 Exposure Analytics", "⏳ Liquidity Timeline", "🏢 Entity Exposure", "🔥 Stress Matrix"])
 
 with tab_charts:
     c1, c2 = st.columns([2, 1])
     with c1:
         st.subheader("🛡️ Strategic Risk Radar")
-        # Optimized Sunburst with 4-decimal precision for small Millions values
-        view_df['Amount_M'] = view_df['Amount_Remaining'] / 1_000_000
-        fig_s = px.sunburst(
-            view_df,
-            path=['Company_Code', 'ESG_Score', 'Customer'],
-            values='Amount_Remaining',
-            color='ESG_Score',
-            color_discrete_map={'AAA':'#238636', 'AA':'#2ea043', 'A':'#d29922', 'B':'#db6d28', 'C':'#f85149', 'D':'#b62323'},
-            hover_data=['Amount_M']
-        )
-        fig_s.update_traces(
-            hovertemplate="<b>%{label}</b><br>Total Value: $%{customdata[0]:,.4f}M<br>Share: %{percentParent:.1%}<extra></extra>"
-        )
+        fig_s = px.sunburst(view_df, path=['Company_Code', 'ESG_Score', 'Customer'], values='Amount_Remaining', color='ESG_Score', color_discrete_map={'AAA':'#238636', 'AA':'#2ea043', 'A':'#d29922', 'B':'#db6d28', 'C':'#f85149', 'D':'#b62323'})
         fig_s.update_layout(template="plotly_dark", height=500, margin=dict(t=10, b=10, l=10, r=10))
         st.plotly_chart(fig_s, use_container_width=True)
-
     with c2:
         st.subheader("⏳ Institutional Ageing")
         def get_bucket(d):
             days = (datetime(2026, 1, 30) - datetime.strptime(d, '%Y-%m-%d')).days
-            if days <= 30: return "0-30"
-            elif days <= 60: return "31-60"
-            elif days <= 90: return "61-90"
-            else: return "90+"
-        
+            return "0-30" if days <= 30 else "31-60" if days <= 60 else "61-90" if days <= 90 else "90+"
         ov = view_df[view_df['Status'] == 'Overdue'].copy()
         if not ov.empty:
             ov['Bucket'] = ov['Due_Date'].apply(get_bucket)
             age_data = ov.groupby('Bucket')['Amount_Remaining'].sum().reset_index()
-            fig_age = px.bar(age_data, x='Bucket', y='Amount_Remaining', color='Bucket',
-                             color_discrete_sequence=px.colors.sequential.Reds_r)
+            fig_age = px.bar(age_data, x='Bucket', y='Amount_Remaining', color='Bucket', color_discrete_sequence=px.colors.sequential.Reds_r)
             fig_age.update_layout(template="plotly_dark", height=500, showlegend=False)
             st.plotly_chart(fig_age, use_container_width=True)
+
+with tab_velocity:
+    st.subheader("📈 Projected Cash Inflow Velocity")
+    view_df['Due_Date_DT'] = pd.to_datetime(view_df['Due_Date'])
+    velocity_data = view_df.groupby(pd.Grouper(key='Due_Date_DT', freq='W'))['Amount_Remaining'].sum().reset_index()
+    fig_v = px.area(velocity_data, x='Due_Date_DT', y='Amount_Remaining', color_discrete_sequence=['#58a6ff'])
+    fig_v.update_layout(template="plotly_dark", xaxis_title="Projection Horizon", yaxis_title="Volume ($)")
+    st.plotly_chart(fig_v, use_container_width=True)
+
+with tab_entity:
+    st.subheader("🏢 Counterparty Concentration Risk")
+    fig_tree = px.treemap(view_df, path=[px.Constant("Portfolio"), 'Customer'], values='Amount_Remaining', color='ESG_Score', color_discrete_map={'AAA':'#238636', 'AA':'#2ea043', 'A':'#d29922', 'B':'#db6d28', 'C':'#f85149', 'D':'#b62323'})
+    fig_tree.update_layout(template="plotly_dark", margin=dict(t=30, b=10, l=10, r=10))
+    st.plotly_chart(fig_tree, use_container_width=True)
 
 with tab_stress:
     st.subheader("Strategic Liquidity Stress Matrix (FX Volatility vs. Hedging)")
     fx_range = np.array([-10, -5, 0, 5, 10])
     hedge_range = np.array([0, 25, 50, 75, 100])
     base_liq = net_collectible / 1e6
-
     z_data = [[round(base_liq * (1 + (fx/100) * (1 - (h/100))), 2) for h in hedge_range] for fx in fx_range]
-
-    fig_h = go.Figure(data=go.Heatmap(
-        z=z_data, x=[f"{h}% Hedge" for h in hedge_range], y=[f"{fx}% FX Vol" for fx in fx_range],
-        colorscale='RdYlGn', text=z_data, texttemplate="$%{text}M"
-    ))
+    fig_h = go.Figure(data=go.Heatmap(z=z_data, x=[f"{h}% Hedge" for h in hedge_range], y=[f"{fx}% FX Vol" for fx in fx_range], colorscale='RdYlGn', text=z_data, texttemplate="$%{text}M"))
     fig_h.update_layout(template="plotly_dark", height=450)
     st.plotly_chart(fig_h, use_container_width=True)
 
