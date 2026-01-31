@@ -258,11 +258,14 @@ elif menu == "⚡ Workbench":
         st.info("AI Matcher identified high-confidence links between receipts and open receivables.")
 
     with t2:
+        # Filter for overdue items
         ov = view_df[view_df['Status'] == 'Overdue']
+        
         if not ov.empty:
             target = st.selectbox("Select Debtor", ov['Customer'].unique())
             inv = ov[ov['Customer'] == target].iloc[0]
             st.markdown("### 📧 Professional Notice Draft")
+            
             email_body = f"""Subject: URGENT: Payment Overdue for {inv['Customer']} ({inv['Invoice_ID']})
 
 Dear Accounts Payable Team,
@@ -274,12 +277,21 @@ Please confirm the payment status or provide a remittance advice by EOD.
 
 Best Regards,
 Treasury Operations Team"""
+
             st.text_area("Final Review", email_body, height=280)
             if st.button("📤 Dispatch Professional Notice"):
                 st.session_state.audit.insert(0, {"Time": datetime.now().strftime("%H:%M"), "Action": "DUNNING", "ID": inv['Invoice_ID'], "Detail": f"Sent to {target}"})
                 st.success("Notice dispatched.")
-        else: st.info("No overdue items found for the current search/filter.")
-
+        else: 
+            # This is where your requested update lives:
+            total_pending = view_df['Amount_Remaining'].sum()
+            st.info(f"✅ No overdue items found for the current selection.")
+            st.metric("Total Outstanding (Current)", f"${total_pending:,.2f}")
+            
+            st.write("📅 **Upcoming Receivables (Next 30 Days):**")
+            upcoming = view_df[view_df['Status'] != 'Overdue'].sort_values('Due_Date').head(5)
+            if not upcoming.empty:
+                st.dataframe(upcoming[['Customer', 'Due_Date', 'Amount_Remaining']], use_container_width=True)
     with t3:
         c_flag, c_res = st.columns(2)
         with c_flag:
