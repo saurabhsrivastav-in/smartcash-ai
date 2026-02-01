@@ -1,8 +1,8 @@
 name: SmartCash AI Heartbeat
 on:
   schedule:
-    - cron: '0 */10 * * *' # Wakes up every 10 hours
-  workflow_dispatch:      # Allows you to click "Run" manually for testing
+    - cron: '15 */10 * * *' # Every 10 hours at minute 15
+  workflow_dispatch:      # Allows you to click "Run" manually
 
 jobs:
   heartbeat:
@@ -17,5 +17,5 @@ jobs:
         run: |
           git config --global user.name "SmartCash-Bot"
           git config --global user.email "bot@smartcash.ai"
-          git commit --allow-empty -m "💓 Heartbeat: Keeping Streamlit App Warm"
+          git commit --allow-empty -m "💓 Heartbeat: Resetting Streamlit Sleep Timer"
           git push
