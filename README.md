@@ -1,7 +1,7 @@
 <div align="center">
 
 [![SmartCash AI CI](https://github.com/saurabhsrivastav-in/SmartCash-AI/actions/workflows/python-app.yml/badge.svg)](https://github.com/saurabhsrivastav-in/SmartCash-AI/actions/workflows/python-app.yml)
-![Coverage](https://img.shields.io/badge/Coverage-54%25-brightgreen?style=flat-square)
+![Coverage](https://img.shields.io/badge/Coverage-Dynamic-brightgreen?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square&logo=python)
 
 # 🏦 SmartCash AI
@@ -26,37 +26,28 @@
 ---
 
 ## 🚀 Engineering Excellence (CI/CD)
+
 The core logic is protected by a rigorous automated testing suite ensuring financial accuracy and compliance.
 
 * **Smart Matching Engine:** 81% code coverage for high-confidence invoice reconciliation.
-* **Compliance & Analytics:** Automated unit testing for SANCTIONS screening and CER (Collection Efficiency) metrics.
+* **Treasury & FX Logic:** Unit-tested currency conversion and liquidity buffer alerts.
+* **Compliance & Analytics:** Automated screening for SANCTIONS and CER (Collection Efficiency) metrics.
 * **Robust Pipeline:** Integrated `GitHub Actions` with `pytest-cov` for continuous reliability.
-
-
 
 ---
 
 ## 📊 Executive Dashboard Preview
+
 * **Multi-Year Trend Analysis:** Historical bank inflow tracking (2023–2025) with AI-projected 2026 forecast.
 * **AR Ageing (DPD):** Real-time "Bucket Analysis" (0-30, 31-60, 91+ days) to identify capital lock-up.
 * **Operational Workbench:** Intelligent "AI Matcher" linking transactions to open invoices with 98% confidence scores.
 
-
-
 ---
 
-## 📖 Strategy & Governance Blueprint
-*The roadmap for the Autonomous Finance Organization.*
-
-* **[🎯 Strategic Pitch Deck](./Project_Pitch_Deck.md)** — ROI analysis and C-Suite value drivers.
-* **[📝 Business Requirements (BRD)](./docs/BRD.md)** — Functional mapping of the O2C lifecycle.
-* **[⚙️ Product Requirements (PRD)](./docs/PRD.md)** — Technical specifications and API logic.
-* **[📖 AR Analyst User Guide](./User_Guide_AR_Analyst.md)** — End-user operational manual.
-
----
-
+## 📅 Development Roadmap 2026
+```mermaid
 gantt
-    title SmartCash AI: Development Roadmap 2026
+    title SmartCash AI development cycle
     dateFormat  YYYY-MM-DD
     section Core Infrastructure
     CI/CD Pipeline & Pytest Setup :done, 2026-01-20, 2026-01-28
@@ -68,10 +59,3 @@ gantt
     section Deployment
     Streamlit Cloud Integration   :2026-02-05, 4d
     UAT & Final Governance Review :2026-02-10, 5d
-
-    ---
-
-## 👨‍💻 Developed by Saurabh Srivastav
-**Business Analyst | Digital Transformation Specialist** Specializing in bridging the gap between **Complex Financial Requirements** and **Elite Technical Execution**.
-
-[Portfolio](https://github.com/saurabhsrivastav-in/) | [Email](mailto:saurabhsrivastav.db@gmail.com)
