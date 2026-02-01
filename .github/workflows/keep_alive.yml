@@ -1,0 +1,12 @@
+name: Keep Streamlit Alive
+on:
+  schedule:
+    - cron: '0 */1 * * *' # Runs every 1 hours
+  workflow_dispatch:      # Allows you to run it manually
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping App
+        run: curl -I https://smartcash-ai-csjcpzt5x3lbimlnuwbnvp.streamlit.app/
