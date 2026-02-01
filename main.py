@@ -160,11 +160,8 @@ if 'Status' in view_df.columns:
     # Only try to convert dates if the dataframe isn't empty and the column exists
     if not ov.empty and 'Due_Date' in ov.columns:
         ov['Due_Date'] = pd.to_datetime(ov['Due_Date'])
-else:
-    # Everything inside the 'else' must be indented
-    st.warning("Column 'Status' not found. Creating an empty Overdue dataframe.")
-    ov = pd.DataFrame(columns=view_df.columns)
         
+        # Define function and logic inside the valid data block
         def get_bucket(invoice_date):
             diff = (today - invoice_date).days
             if diff <= 15: return "0-15"
@@ -186,6 +183,7 @@ else:
         fig_age.update_layout(template="plotly_dark", height=450)
         st.plotly_chart(fig_age, use_container_width=True)
     else: 
+        # This handles the case where 'Status' exists but no rows are 'Overdue'
         total_pending = view_df['Amount_Remaining'].sum()
         st.info(f"✅ No overdue items found for the current selection.")
         st.metric("Total Outstanding (Current)", f"${total_pending:,.2f}")
@@ -194,8 +192,12 @@ else:
         upcoming = view_df[view_df['Status'] != 'Overdue'].sort_values('Due_Date').head(5)
         if not upcoming.empty:
             st.dataframe(upcoming[['Customer', 'Due_Date', 'Amount_Remaining']], use_container_width=True)
+else:
+    # This handles the case where the 'Status' column is completely missing
+    st.warning("Column 'Status' not found. Creating an empty Overdue dataframe.")
+    ov = pd.DataFrame(columns=view_df.columns)
 
-    st.divider()
+st.divider()
 
     st.subheader("🔥 Interactive Stress Matrix (FX vs Hedge)")
     fx_range = np.array([-15, -10, -5, -2, 0, 5, 10])
