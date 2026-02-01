@@ -55,6 +55,22 @@ The core logic is protected by a rigorous automated testing suite ensuring finan
 
 ---
 
+gantt
+    title SmartCash AI: Development Roadmap 2026
+    dateFormat  YYYY-MM-DD
+    section Core Infrastructure
+    CI/CD Pipeline & Pytest Setup :done, 2026-01-20, 2026-01-28
+    Mock Data Synchronization     :done, 2026-01-29, 2d
+    section AI Logic & Testing
+    Matching Engine Optimization  :active, 2026-01-30, 5d
+    Analytics & Compliance Tests  :done, 2026-02-01, 1d
+    Treasury & FX Logic Testing   :active, 2026-02-01, 3d
+    section Deployment
+    Streamlit Cloud Integration   :2026-02-05, 4d
+    UAT & Final Governance Review :2026-02-10, 5d
+
+    ---
+
 ## 👨‍💻 Developed by Saurabh Srivastav
 **Business Analyst | Digital Transformation Specialist** Specializing in bridging the gap between **Complex Financial Requirements** and **Elite Technical Execution**.
 
