@@ -294,7 +294,7 @@ elif menu == "⚡ Workbench":
             st.markdown("### 📧 Professional Notice Draft")
             
           # 1. First, create the safe ID variable
-inv_id = inv.get('Invoice_ID', inv.get('Invoice', 'N/A')) 
+          inv_id = inv.get('Invoice_ID', inv.get('Invoice', 'N/A')) 
 
 # 2. Use 'inv_id' everywhere inside the f-string (DO NOT use inv['Invoice_ID'])
 email_body = f"""Subject: URGENT: Payment Overdue for {inv['Customer']} ({inv_id})
