@@ -43,13 +43,14 @@ def load_institutional_data():
             inv_df['Is_Disputed'] = False
 
         # 4. Convert Dates
-        inv_df['Due_Date'] = pd.to_datetime(inv_df['Due_Date'])
-        bank_df['Date'] = pd.to_datetime(bank_df['Date'])
+        inv_df['Due_Date'] = pd.to_datetime(inv_df['Due_Date'], errors='coerce')
+        bank_df['Date'] = pd.to_datetime(bank_df['Date'], errors='coerce')
         
         return inv_df, bank_df
     except Exception as e:
         st.error(f"⚠️ Initialization Error: {e}")
-        return pd.DataFrame(), pd.DataFrame()
+        # Return empty DFs with expected columns to prevent downstream crashes
+        return pd.DataFrame(columns=['Customer', 'Invoice_ID', 'Amount_Remaining', 'Due_Date', 'Status', 'Company_Code', 'Is_Disputed']), pd.DataFrame()
 
 if 'ledger' not in st.session_state or 'bank' not in st.session_state:
     ledger_df, bank_df = load_institutional_data()
@@ -89,19 +90,20 @@ st.divider()
 # --- 5. SEARCH & FILTER LOGIC ---
 view_df = st.session_state.ledger.copy()
 
-if search_term:
-    view_df = view_df[view_df['Customer'].str.contains(search_term, case=False) | 
-                      view_df['Invoice_ID'].str.contains(search_term, case=False)]
-elif chat_term:
-    view_df = view_df[view_df['Customer'].str.contains(chat_term, case=False) | 
-                      view_df['Invoice_ID'].str.contains(chat_term, case=False)]
+if not view_df.empty:
+    if search_term:
+        view_df = view_df[view_df['Customer'].astype(str).str.contains(search_term, case=False) | 
+                          view_df['Invoice_ID'].astype(str).str.contains(search_term, case=False)]
+    elif chat_term:
+        view_df = view_df[view_df['Customer'].astype(str).str.contains(chat_term, case=False) | 
+                          view_df['Invoice_ID'].astype(str).str.contains(chat_term, case=False)]
 
 with st.sidebar:
     st.header("⚙️ Controls")
     menu = st.radio("Workspace", ["📈 Dashboard", "🛡️ Risk Radar", "⚡ Workbench", "📜 Audit"])
     latency = st.slider("Collection Latency (Days)", 0, 90, 15)
     
-    if 'Company_Code' in st.session_state.ledger.columns:
+    if 'Company_Code' in st.session_state.ledger.columns and not st.session_state.ledger.empty:
         entities = ["Consolidated"] + list(st.session_state.ledger['Company_Code'].unique())
         ent_f = st.selectbox("Company Entity", entities)
     else:
@@ -111,14 +113,15 @@ with st.sidebar:
     st.divider()
     stress_test = st.toggle("Enable Stress Loading", help="Simulate high-risk market conditions")
 
-if ent_f != "Consolidated":
-    view_df = view_df[view_df['Company_Code'] == ent_f]
+if ent_f != "Consolidated" and not view_df.empty:
+    if 'Company_Code' in view_df.columns:
+        view_df = view_df[view_df['Company_Code'] == ent_f]
     
-if 'Amount_Remaining' in view_df.columns:
-    liq_pool = (view_df['Amount_Remaining'].sum() / 1e6) - (latency * 0.12)
+if 'Amount_Remaining' in view_df.columns and not view_df.empty:
+    liq_pool = (pd.to_numeric(view_df['Amount_Remaining'], errors='coerce').sum() / 1e6) - (latency * 0.12)
 else:
-    st.error(f"Critical Column Missing! Expected 'Amount_Remaining' but found: {list(view_df.columns)}")
     liq_pool = 0.0
+
 today = datetime(2026, 1, 30)
 
 # --- 6. WORKSPACE ---
@@ -152,22 +155,24 @@ if menu == "📈 Dashboard":
 
     st.subheader("⏳ Accounts Receivable Ageing Analysis")
 
-    if 'Status' in view_df.columns:
+    if 'Status' in view_df.columns and not view_df.empty:
         ov = view_df[view_df['Status'] == 'Overdue'].copy()
         
         if not ov.empty and 'Due_Date' in ov.columns:
             ov['Due_Date'] = pd.to_datetime(ov['Due_Date'])
             
             def get_bucket(invoice_date):
-                diff = (today - invoice_date).days
-                if diff <= 15: return "0-15"
-                elif diff <= 30: return "16-30"
-                elif diff <= 60: return "31-60"
-                elif diff <= 90: return "61-90"
-                elif diff <= 120: return "91-120"
-                elif diff <= 180: return "121-180"
-                elif diff <= 360: return "181-360"
-                else: return "361+"
+                try:
+                    diff = (today - invoice_date).days
+                    if diff <= 15: return "0-15"
+                    elif diff <= 30: return "16-30"
+                    elif diff <= 60: return "31-60"
+                    elif diff <= 90: return "61-90"
+                    elif diff <= 120: return "91-120"
+                    elif diff <= 180: return "121-180"
+                    elif diff <= 360: return "181-360"
+                    else: return "361+"
+                except: return "Unknown"
 
             ov['Bucket'] = ov['Due_Date'].apply(get_bucket)
             order = ["0-15", "16-30", "31-60", "61-90", "91-120", "121-180", "181-360", "361+"]
@@ -188,8 +193,7 @@ if menu == "📈 Dashboard":
             if not upcoming.empty:
                 st.dataframe(upcoming[['Customer', 'Due_Date', 'Amount_Remaining']], use_container_width=True)
     else:
-        st.warning("Column 'Status' not found. Creating an empty Overdue dataframe.")
-        ov = pd.DataFrame(columns=view_df.columns)
+        st.warning("Data or 'Status' column unavailable.")
 
     st.divider()
 
@@ -210,12 +214,20 @@ elif menu == "🛡️ Risk Radar":
     if not view_df.empty:
         weights = {'AAA':0.05, 'AA':0.1, 'A':0.2, 'B':0.4, 'C':0.6, 'D':0.9}
         
+        # Safe column processing
         for col in ['Company_Code', 'Currency', 'ESG_Score', 'Customer']:
-            view_df[col] = view_df[col].astype(str).replace('nan', 'Unknown')
+            if col in view_df.columns:
+                view_df[col] = view_df[col].astype(str).replace('nan', 'Unknown')
+            else:
+                view_df[col] = "Unknown"
         
         view_df['Amount_Remaining'] = pd.to_numeric(view_df['Amount_Remaining'], errors='coerce').fillna(0)
         
-        view_df['Exposure'] = view_df['Amount_Remaining'] * view_df['ESG_Score'].map(weights).fillna(0)
+        if 'ESG_Score' in view_df.columns:
+            view_df['Exposure'] = view_df['Amount_Remaining'] * view_df['ESG_Score'].map(weights).fillna(0)
+        else:
+            view_df['Exposure'] = 0
+            
         view_df['Amount_M'] = view_df['Amount_Remaining'] / 1_000_000
 
         fig_s = px.sunburst(
@@ -248,15 +260,18 @@ elif menu == "⚡ Workbench":
     with t1:
         st.write("**Intelligent Bank Reconciliation**")
         match_df = st.session_state.bank.copy()
-        if 'Customer' in match_df.columns and 'Customer' in st.session_state.ledger.columns:
-            match_df['Suggested_Invoice'] = match_df['Customer'].apply(
-                lambda x: st.session_state.ledger[st.session_state.ledger['Customer'] == x]['Invoice_ID'].values[0] 
-                if not st.session_state.ledger[st.session_state.ledger['Customer'] == x].empty else "No Match"
-            )
-            st.dataframe(match_df, use_container_width=True)
-            st.info("AI Matcher identified high-confidence links between receipts and open receivables.")
+        if not match_df.empty and not st.session_state.ledger.empty:
+            if 'Customer' in match_df.columns and 'Customer' in st.session_state.ledger.columns:
+                match_df['Suggested_Invoice'] = match_df['Customer'].apply(
+                    lambda x: st.session_state.ledger[st.session_state.ledger['Customer'] == x]['Invoice_ID'].values[0] 
+                    if not st.session_state.ledger[st.session_state.ledger['Customer'] == x].empty else "No Match"
+                )
+                st.dataframe(match_df, use_container_width=True)
+                st.info("AI Matcher identified high-confidence links between receipts and open receivables.")
+            else:
+                st.error("❌ Column mismatch: Ensure both files have a 'Customer' column.")
         else:
-            st.error("❌ Column mismatch: Ensure both files have a 'Customer' or 'Payer_Name' column.")
+            st.info("Bank feed or Ledger is currently empty.")
 
     with t2:
         ov = view_df[view_df['Status'] == 'Overdue'] if 'Status' in view_df.columns else pd.DataFrame()
@@ -270,7 +285,7 @@ elif menu == "⚡ Workbench":
 Dear Accounts Payable Team,
 
 This is a formal notice regarding Invoice {inv['Invoice_ID']}, which was due on {inv['Due_Date']}.
-Our records indicate an outstanding balance of {inv['Currency']} {inv['Amount_Remaining']:,.2f}.
+Our records indicate an outstanding balance of {inv.get('Currency', 'USD')} {inv['Amount_Remaining']:,.2f}.
 
 Please confirm the payment status or provide a remittance advice by EOD.
 
@@ -288,40 +303,36 @@ Treasury Operations Team"""
                 })
                 st.success("Notice dispatched.")
         else: 
-            total_pending = view_df['Amount_Remaining'].sum()
-            st.info(f"✅ No overdue items found for the current selection.")
-            st.metric("Total Outstanding (Current)", f"${total_pending:,.2f}")
-            st.write("📅 **Upcoming Receivables (Next 30 Days):**")
-            if 'Status' in view_df.columns:
-                upcoming = view_df[view_df['Status'] != 'Overdue'].sort_values('Due_Date').head(5)
-                if not upcoming.empty:
-                    st.dataframe(upcoming[['Customer', 'Due_Date', 'Amount_Remaining']], use_container_width=True)
-                
+            st.info(f"✅ No overdue items found for dunning.")
+
     with t3:
         c_flag, c_res = st.columns(2)
-        with c_flag:
-            not_disputed = view_df[~view_df['Is_Disputed']]
-            if not not_disputed.empty:
-                to_freeze = st.selectbox("Invoice to Freeze", not_disputed['Invoice_ID'])
-                if st.button("🚩 Freeze Invoice"):
-                    idx = st.session_state.ledger.index[st.session_state.ledger['Invoice_ID'] == to_freeze][0]
-                    st.session_state.ledger.at[idx, 'Is_Disputed'] = True
-                    st.session_state.audit.insert(0, {"Time": datetime.now().strftime("%H:%M"), "Action": "DISPUTE_FLAG", "ID": to_freeze, "Detail": "Manual Dispute"})
-                    st.rerun()
-            else:
-                st.info("No invoices available to freeze.")
-                
-        with c_res:
-            disputed = view_df[view_df['Is_Disputed']]
-            if not disputed.empty:
-                to_resolve = st.selectbox("Invoice to Unfreeze", disputed['Invoice_ID'])
-                if st.button("✅ Resolve"):
-                    idx = st.session_state.ledger.index[st.session_state.ledger['Invoice_ID'] == to_resolve][0]
-                    st.session_state.ledger.at[idx, 'Is_Disputed'] = False
-                    st.session_state.audit.insert(0, {"Time": datetime.now().strftime("%H:%M"), "Action": "RESOLVED", "ID": to_resolve, "Detail": "Issue Settled"})
-                    st.rerun()
-            else: 
-                st.info("No active disputes.")
+        if not view_df.empty:
+            with c_flag:
+                not_disputed = view_df[~view_df['Is_Disputed']]
+                if not not_disputed.empty:
+                    to_freeze = st.selectbox("Invoice to Freeze", not_disputed['Invoice_ID'])
+                    if st.button("🚩 Freeze Invoice"):
+                        idx = st.session_state.ledger.index[st.session_state.ledger['Invoice_ID'] == to_freeze][0]
+                        st.session_state.ledger.at[idx, 'Is_Disputed'] = True
+                        st.session_state.audit.insert(0, {"Time": datetime.now().strftime("%H:%M"), "Action": "DISPUTE_FLAG", "ID": to_freeze, "Detail": "Manual Dispute"})
+                        st.rerun()
+                else:
+                    st.info("No invoices available to freeze.")
+                    
+            with c_res:
+                disputed = view_df[view_df['Is_Disputed']]
+                if not disputed.empty:
+                    to_resolve = st.selectbox("Invoice to Unfreeze", disputed['Invoice_ID'])
+                    if st.button("✅ Resolve"):
+                        idx = st.session_state.ledger.index[st.session_state.ledger['Invoice_ID'] == to_resolve][0]
+                        st.session_state.ledger.at[idx, 'Is_Disputed'] = False
+                        st.session_state.audit.insert(0, {"Time": datetime.now().strftime("%H:%M"), "Action": "RESOLVED", "ID": to_resolve, "Detail": "Issue Settled"})
+                        st.rerun()
+                else: 
+                    st.info("No active disputes.")
+        else:
+            st.info("Workbench requires active ledger data.")
 
 elif menu == "📜 Audit":
     st.write("### 📜 System Audit Log")
