@@ -17,29 +17,41 @@ if 'chat_key' not in st.session_state:
 @st.cache_data
 def load_institutional_data():
     try:
+        # Load files from your data folder
         inv_df = pd.read_csv("data/invoices.csv")
         bank_df = pd.read_csv("data/bank_feed.csv")
         
-        # Standardize all headers to Title_Case with no spaces
-        inv_df.columns = [str(c).strip().replace(' ', '_').title() for c in inv_df.columns]
-        bank_df.columns = [str(c).strip().replace(' ', '_').title() for c in bank_df.columns]
+        # 1. Clean headers (Remove hidden spaces)
+        inv_df.columns = inv_df.columns.str.strip()
+        bank_df.columns = bank_df.columns.str.strip()
 
-        # Explicitly map the specific columns causing the KeyError
+        # 2. FIX FOR MATCHER: Map your GitHub headers to app headers
+        # This resolves: "Ensure invoices.csv has an Invoice_ID column"
         inv_df = inv_df.rename(columns={
-            'Invoice': 'Invoice_ID',
-            'Inv_No': 'Invoice_ID',
-            'Amount': 'Amount_Remaining',
-            'Balance': 'Amount_Remaining'
+            'Invoice_No': 'Invoice_ID',    # Maps your CSV to Matcher
+            'Customer_Name': 'Customer',   # Maps your CSV to Matcher
+            'Amount': 'Amount_Remaining'
         })
         
-        # Ensure 'Customer' column exists in both
-        if 'Customer_Name' in inv_df.columns: inv_df.rename(columns={'Customer_Name': 'Customer'}, inplace=True)
-        if 'Payer' in bank_df.columns: bank_df.rename(columns={'Payer': 'Customer'}, inplace=True)
+        bank_df = bank_df.rename(columns={
+            'Payer_Name': 'Customer',      # Maps your bank file to Matcher
+            'Amount_Received': 'Amount'
+        })
 
+        # 3. SAFETY DEFAULTS: Ensure columns exist for Risk Radar
+        if 'Is_Disputed' not in inv_df.columns: inv_df['Is_Disputed'] = False
+        if 'Status' not in inv_df.columns: inv_df['Status'] = 'Open'
+        if 'ESG_Score' not in inv_df.columns: inv_df['ESG_Score'] = 'A'
+        if 'Currency' not in inv_df.columns: inv_df['Currency'] = 'USD'
+        if 'Company_Code' not in inv_df.columns: inv_df['Company_Code'] = 'Main'
+
+        # 4. Convert Dates
+        inv_df['Due_Date'] = pd.to_datetime(inv_df['Due_Date'], errors='coerce')
+        
         return inv_df, bank_df
     except Exception as e:
-        st.error(f"Error: {e}")
-        return pd.DataFrame(columns=['Customer', 'Invoice_ID', 'Amount_Remaining']), pd.DataFrame()
+        st.error(f"⚠️ Data Loading Error: {e}")
+        return pd.DataFrame(), pd.DataFrame()
         
         # 3. SAFETY DEFAULTS: Prevents "Column Unavailable" crashes
         required_cols = {
