@@ -293,12 +293,15 @@ elif menu == "⚡ Workbench":
             inv = ov[ov['Customer'] == target].iloc[0]
             st.markdown("### 📧 Professional Notice Draft")
             
-            inv_id = inv.get('Invoice_ID', inv.get('Invoice', 'N/A')) # Safety check for name
-            email_body = f"""Subject: URGENT: Payment Overdue for {inv['Customer']} ({inv_id})
+          # 1. First, create the safe ID variable
+inv_id = inv.get('Invoice_ID', inv.get('Invoice', 'N/A')) 
+
+# 2. Use 'inv_id' everywhere inside the f-string (DO NOT use inv['Invoice_ID'])
+email_body = f"""Subject: URGENT: Payment Overdue for {inv['Customer']} ({inv_id})
 
 Dear Accounts Payable Team,
 
-This is a formal notice regarding Invoice {inv['Invoice_ID']}, which was due on {inv['Due_Date']}.
+This is a formal notice regarding Invoice {inv_id}, which was due on {inv['Due_Date']}.
 Our records indicate an outstanding balance of {inv.get('Currency', 'USD')} {inv['Amount_Remaining']:,.2f}.
 
 Please confirm the payment status or provide a remittance advice by EOD.
