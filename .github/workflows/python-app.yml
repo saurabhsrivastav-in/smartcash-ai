@@ -20,7 +20,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Set up Python 3.11
-      uses: actions/setup-python@v5  # Updated from v3
+      uses: actions/setup-python@v5
       with:
         python-version: "3.11"
         cache: 'pip'                # ⚡ Fixes the 45s lag by caching requirements
@@ -44,12 +44,6 @@ jobs:
 
     - name: Run Unit Tests with Coverage
       env:
-        PYTHONPATH: .               # ⚡ Fixes "ModuleNotFoundError: No module named 'backend'"
-      run: |
-        pytest --cov=backend tests/
-
-        - name: Run Unit Tests with Coverage
-      env:
-        PYTHONPATH: .  # <--- THIS IS CRITICAL
+        PYTHONPATH: .               # ⚡ Fixes "ModuleNotFoundError" by adding root to path
       run: |
         pytest --cov=backend tests/
