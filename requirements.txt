@@ -1,28 +1,28 @@
-# --- CORE DATA & QUANTITATIVE ANALYTICS ---
-pandas==2.2.0
-numpy==1.26.0
-scipy==1.12.0
-scikit-learn==1.4.0
+# --- CORE DATA & ANALYTICS (Relaxed pinning for faster binary matching) ---
+pandas>=2.1.0
+numpy>=1.24.0
+scipy>=1.11.0
+scikit-learn>=1.3.0
 
-# --- MATCHING ENGINE & COGNITIVE AI ---
+# --- MATCHING ENGINE & AI ---
 fuzzywuzzy==0.18.0
 python-Levenshtein==0.23.0
 openai==1.10.0
-lxml==5.1.0
+lxml>=5.1.0
 
-# --- UI FRAMEWORK & FINANCIAL VISUALIZATION ---
+# --- UI & VISUALIZATION ---
 streamlit==1.31.0
-plotly==5.18.0
+plotly>=5.18.0
 st-annotated-text>=4.0.0
 fpdf==1.7.2
 python-pptx==0.6.21
 
-# --- SECURITY, GOVERNANCE & COMPLIANCE ---
-cryptography==42.0.0
+# --- SECURITY & UTILS ---
+cryptography>=42.0.0
 python-dotenv==1.0.0
-python-dateutil==2.8.2
+python-dateutil>=2.8.2
 
-# --- ENTERPRISE TESTING, AUDIT & UPTIME ---
-pytest==8.0.0
-pytest-cov==4.1.0
-pytest-rerunfailures==14.0  # Prevents CI failure from intermittent runner hiccups
+# --- CI/CD & TESTING ---
+pytest>=8.0.0
+pytest-cov>=4.1.0
+pytest-rerunfailures>=14.0
