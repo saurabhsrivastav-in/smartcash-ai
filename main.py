@@ -231,7 +231,9 @@ elif menu == "🛡️ Risk Radar":
             else:
                 view_df[col] = "Unknown"
         
+        # Fix: Ensure all numeric and categorical data is cleaned before passing to Plotly
         view_df['Amount_Remaining'] = pd.to_numeric(view_df['Amount_Remaining'], errors='coerce').fillna(0)
+        view_df = view_df.fillna("Unknown") 
         
         if 'ESG_Score' in view_df.columns:
             view_df['Exposure'] = view_df['Amount_Remaining'] * view_df['ESG_Score'].map(weights).fillna(0)
@@ -262,7 +264,7 @@ elif menu == "🛡️ Risk Radar":
         st.plotly_chart(fig_s, use_container_width=True)
     else:
         st.info("Please ensure data is loaded to view Risk Radar.")
-
+        
 elif menu == "⚡ Workbench":
     st.subheader("⚡ Operational Command")
     t1, t2, t3 = st.tabs(["🧩 AI Matcher", "📩 Dunning Center", "🛠️ Dispute Resolver"])
