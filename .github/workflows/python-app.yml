@@ -47,3 +47,9 @@ jobs:
         PYTHONPATH: .               # ⚡ Fixes "ModuleNotFoundError: No module named 'backend'"
       run: |
         pytest --cov=backend tests/
+
+        - name: Run Unit Tests with Coverage
+      env:
+        PYTHONPATH: .  # <--- THIS IS CRITICAL
+      run: |
+        pytest --cov=backend tests/
