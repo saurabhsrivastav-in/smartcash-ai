@@ -44,6 +44,6 @@ jobs:
 
     - name: Run Unit Tests with Coverage
       env:
-        PYTHONPATH: .               # ⚡ Fixes "ModuleNotFoundError" by adding root to path
+        PYTHONPATH: .               # ⚡ MANDATORY: Allows tests/ to find backend/
       run: |
         pytest --cov=backend tests/
