@@ -42,8 +42,19 @@ jobs:
       run: |
         python mock_data_maker.py
 
-    - name: Run Unit Tests with Coverage
+  - name: Run Unit Tests with Coverage
       run: |
-        # 🚀 Pytest now automatically uses settings from pytest.ini
-        # This handles PYTHONPATH and --cov internally.
-        pytest
+        pytest --cov=backend --cov-report=json
+        # Extract percentage for the badge
+        export TOTAL=$(python -c "import json; print(json.load(open('coverage.json'))['totals']['percent_covered_display'])")
+        echo "COVERAGE=$TOTAL" >> $GITHUB_ENV
+
+    # Replace '54%' in README with actual value (Local Hack for Free Tier)
+    - name: Update Coverage Badge in README
+      run: |
+        sed -i "s/Coverage-[0-9]\{1,3\}%/Coverage-${{ env.COVERAGE }}%/g" README.md
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add README.md
+        git commit -m "chore: update coverage badge [skip ci]" || echo "No changes to commit"
+        git push
