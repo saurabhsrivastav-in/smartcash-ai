@@ -20,24 +20,27 @@ def load_institutional_data():
         inv_df = pd.read_csv("data/invoices.csv")
         bank_df = pd.read_csv("data/bank_feed.csv")
         
-        # 1. CLEAN HEADERS: Removes hidden spaces and standardizes format
+        # Standardize all headers to Title_Case with no spaces
         inv_df.columns = [str(c).strip().replace(' ', '_').title() for c in inv_df.columns]
         bank_df.columns = [str(c).strip().replace(' ', '_').title() for c in bank_df.columns]
 
-        # 2. FEATURE MAPPING: Forces various CSV names into the names the app expects
-        # This fixes Workbench (AI Matcher) and Risk Radar
+        # Explicitly map the specific columns causing the KeyError
         inv_df = inv_df.rename(columns={
-            'Amount': 'Amount_Remaining', 'Balance': 'Amount_Remaining',
-            'Customer_Name': 'Customer', 'Client_Name': 'Customer',
-            'Invoice_No': 'Invoice_ID', 'Inv_Id': 'Invoice_ID',
-            'Esg': 'Esg_Score'
+            'Invoice': 'Invoice_ID',
+            'Inv_No': 'Invoice_ID',
+            'Amount': 'Amount_Remaining',
+            'Balance': 'Amount_Remaining'
         })
         
-        bank_df = bank_df.rename(columns={
-            'Payer_Name': 'Customer', 'Sender': 'Customer', 
-            'Amount_Received': 'Amount', 'Value': 'Amount'
-        })
+        # Ensure 'Customer' column exists in both
+        if 'Customer_Name' in inv_df.columns: inv_df.rename(columns={'Customer_Name': 'Customer'}, inplace=True)
+        if 'Payer' in bank_df.columns: bank_df.rename(columns={'Payer': 'Customer'}, inplace=True)
 
+        return inv_df, bank_df
+    except Exception as e:
+        st.error(f"Error: {e}")
+        return pd.DataFrame(columns=['Customer', 'Invoice_ID', 'Amount_Remaining']), pd.DataFrame()
+        
         # 3. SAFETY DEFAULTS: Prevents "Column Unavailable" crashes
         required_cols = {
             'Is_Disputed': False,
@@ -264,21 +267,24 @@ elif menu == "⚡ Workbench":
     st.subheader("⚡ Operational Command")
     t1, t2, t3 = st.tabs(["🧩 AI Matcher", "📩 Dunning Center", "🛠️ Dispute Resolver"])
     
-    with t1:
+with t1:
         st.write("**Intelligent Bank Reconciliation**")
         match_df = st.session_state.bank.copy()
-        if not match_df.empty and not st.session_state.ledger.empty:
-            if 'Customer' in match_df.columns and 'Customer' in st.session_state.ledger.columns:
-                match_df['Suggested_Invoice'] = match_df['Customer'].apply(
-                    lambda x: st.session_state.ledger[st.session_state.ledger['Customer'] == x]['Invoice_ID'].values[0] 
-                    if not st.session_state.ledger[st.session_state.ledger['Customer'] == x].empty else "No Match"
-                )
-                st.dataframe(match_df, use_container_width=True)
-                st.info("AI Matcher identified high-confidence links between receipts and open receivables.")
-            else:
-                st.error("❌ Column mismatch: Ensure both files have a 'Customer' column.")
+        ledger_ref = st.session_state.ledger
+        
+        # Check if necessary columns exist to prevent KeyError
+        if not match_df.empty and 'Customer' in match_df.columns and 'Invoice_ID' in ledger_ref.columns:
+            
+            # SAFER MATCHING LOGIC
+            def get_invoice(customer_name):
+                match = ledger_ref[ledger_ref['Customer'] == customer_name]
+                return match['Invoice_ID'].values[0] if not match.empty else "No Match"
+
+            match_df['Suggested_Invoice'] = match_df['Customer'].apply(get_invoice)
+            st.dataframe(match_df, use_container_width=True)
+            st.info("AI Matcher identified links between receipts and receivables.")
         else:
-            st.info("Bank feed or Ledger is currently empty.")
+            st.warning("Cannot run Matcher. Ensure 'invoices.csv' has an 'Invoice_ID' column and both files have 'Customer'.")
 
     with t2:
         ov = view_df[view_df['Status'] == 'Overdue'] if 'Status' in view_df.columns else pd.DataFrame()
