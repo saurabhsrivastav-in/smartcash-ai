@@ -114,7 +114,12 @@ with st.sidebar:
 if ent_f != "Consolidated":
     view_df = view_df[view_df['Company_Code'] == ent_f]
     
-liq_pool = (view_df['Amount_Remaining'].sum() / 1e6) - (latency * 0.12)
+if 'Amount_Remaining' in view_df.columns:
+    liq_pool = (view_df['Amount_Remaining'].sum() / 1e6) - (latency * 0.12)
+else:
+    # This helps you see what actually exists while you're debugging
+    st.error(f"Critical Column Missing! Expected 'Amount_Remaining' but found: {list(view_df.columns)}")
+    liq_pool = 0.0
 today = datetime(2026, 1, 30)
 
 # --- 6. WORKSPACE ---
