@@ -44,7 +44,7 @@ def generate_pdf(df, mode_name, liquidity):
         pdf.cell(45, 10, str(row['Due_Date']), 1, 1)
         
     # --- INDENTATION FIXED BELOW ---
-    pdf_output = pdf.output()
+    pdf_output = pdf.output(dest='S')
     if isinstance(pdf_output, (bytearray, str)):
         if isinstance(pdf_output, str):
             return pdf_output.encode('latin-1')
@@ -90,8 +90,6 @@ if 'ledger' not in st.session_state:
         ent = np.random.choice(entities)
         
         # --- STRATEGIC DATA SCALING ---
-        # 10% of invoices are "Strategic Risks" (20M - 35M)
-        # 90% are standard operational (1M - 15M)
         if np.random.random() > 0.90:
             amt = np.random.uniform(20_000_000, 35_000_000)
         else:
@@ -124,7 +122,6 @@ st.markdown("""
 # --- 3. SIDEBAR & MACRO TOGGLES ---
 with st.sidebar:
     st.title("🛡️ Risk Controls")
-    # Interactive Toggles that affect metrics globally
     bad_debt_provision = st.slider("Bad Debt Provision (%)", 0, 20, 5)
     risk_weighting = st.toggle("Enable Risk-Weighted Valuation", value=True)
     st.divider()
@@ -149,37 +146,27 @@ st.divider()
 # --- 5. DATA FILTERING & SCENARIO ENGINE ---
 view_df = st.session_state.ledger.copy()
 
-# Filter by Customer
 if search_selection != "Consolidated":
     view_df = view_df[view_df['Customer'] == search_selection]
 
-# View Mode Logic (THE FIX: Defining weights for ALL paths)
 if mode == "AI Forecast":
-    # 1. AI Logic: Predict 2% haircut on all values
     view_df['Amount_Remaining'] = view_df['Amount_Remaining'] * 0.98 
-    # 2. AI Weights: Slightly more optimistic than 'Actuals'
     weights = {'AAA':0.99, 'AA':0.97, 'A':0.92, 'B':0.85, 'C':0.70, 'D':0.50}
     st.sidebar.warning("🤖 AI Mode: Adjusting for predicted defaults.")
-
 elif mode == "Stress Test":
-    # 1. Stress Logic: Aggressive risk weighting for downturn
     weights = {'AAA':0.90, 'AA':0.80, 'A':0.70, 'B':0.40, 'C':0.20, 'D':0.05}
     st.sidebar.error("🔥 Stress Test: 20% Market Downturn applied.")
-
 else:
-    # 1. Actuals Logic: Standard institutional weights
     weights = {'AAA':0.98, 'AA':0.95, 'A':0.90, 'B':0.80, 'C':0.60, 'D':0.40}
 
-# --- 6. C-SUITE METRICS (Dynamic Calculations) ---
+# --- 6. C-SUITE METRICS ---
 total_val = view_df['Amount_Remaining'].sum()
 
 if mode == "Stress Test" or risk_weighting:
-    # Calculate liquidity based on scenario-specific weights
     net_collectible = (view_df['Amount_Remaining'] * view_df['ESG_Score'].map(weights)).sum()
 else:
     net_collectible = total_val * (1 - (bad_debt_provision/100))
 
-# Update Metrics
 m1, m2, m3, m4 = st.columns(4)
 m1.metric("Risk-Adjusted Net Liquidity", f"${(net_collectible/1e6):.2f}M", 
           delta=f"{(net_collectible/total_val*100):.1f}% Realizable")
@@ -196,7 +183,7 @@ with tab_charts:
     c1, c2 = st.columns([2, 1])
     with c1:
         st.subheader("🛡️ Strategic Risk Radar")
-        fig_s = px.sunburst(view_df, path=['Company_Code', 'ESG_Score', 'Customer'], values='Amount_Remaining', color='ESG_Score', color_discrete_map={'AAA':'#238636', 'AA':'#2ea043', 'A':'#d29922', 'B':'#db6d28', 'C':'#f85149', 'D':'#b62323'})
+        fig_s = px.sunburst(view_df.fillna("Unknown"), path=['Company_Code', 'ESG_Score', 'Customer'], values='Amount_Remaining', color='ESG_Score', color_discrete_map={'AAA':'#238636', 'AA':'#2ea043', 'A':'#d29922', 'B':'#db6d28', 'C':'#f85149', 'D':'#b62323'})
         fig_s.update_layout(template="plotly_dark", height=500, margin=dict(t=10, b=10, l=10, r=10))
         st.plotly_chart(fig_s, use_container_width=True)
     with c2:
@@ -226,7 +213,6 @@ with tab_entity:
     with col_ctrl1:
         view_limit = st.toggle("Focus on High-Exposure Entities (Top per Category)", value=False)
     with col_ctrl2:
-        # FIXED SLIDER
         top_n = st.slider("Entities per Rating", 5, 50, 5, step=5, disabled=not view_limit)
 
     risk_colors = {'AAA':'#238636', 'AA':'#2ea043', 'A':'#d29922', 'B':'#db6d28', 'C':'#f85149', 'D':'#b62323'}
@@ -254,7 +240,7 @@ with tab_entity:
             size="Amount_Remaining", color="ESG_Score", hover_name="Customer",
             color_discrete_map=risk_colors, template="plotly_dark", size_max=60
         )
-        max_bubble_value = entity_analysis['Amount_Remaining'].max()
+        max_bubble_value = entity_analysis['Amount_Remaining'].max() if not entity_analysis.empty else 1
         fig_bubble.update_layout(
             height=650,
             yaxis=dict(range=[0, max_bubble_value * 1.2], title="Exposure ($)", gridcolor="#30363d"),
@@ -262,23 +248,20 @@ with tab_entity:
         )
         st.plotly_chart(fig_bubble, use_container_width=True, key="bubble_main")
 
-   with col_cards:
-    st.write("#### 🛡️ Priority Watchlist")
-    # Consolidate duplicates before picking the top 5
-    watchlist_data = entity_analysis.groupby('Customer')['Amount_Remaining'].sum().reset_index()
-    top_risks = watchlist_data.sort_values(by='Amount_Remaining', ascending=False).head(5)
-    
-    for _, row in top_risks.iterrows():
-        # Find the original rating for the color indicator
-        orig_rating = entity_analysis[entity_analysis['Customer'] == row['Customer']]['ESG_Score'].iloc[0]
-        border_color = risk_colors.get(orig_rating, '#58a6ff')
+    with col_cards:
+        st.write("#### 🛡️ Priority Watchlist")
+        watchlist_data = entity_analysis.groupby('Customer')['Amount_Remaining'].sum().reset_index()
+        top_risks = watchlist_data.sort_values(by='Amount_Remaining', ascending=False).head(5)
         
-        st.markdown(f"""
-        <div style="background:#161b22; padding:12px; border-radius:10px; border-left: 5px solid {border_color}; margin-bottom:10px;">
-            <p style="margin:0; font-weight:bold;">{row['Customer']}</p>
-            <p style="margin:0; font-size:18px; color:#58a6ff;">${row['Amount_Remaining']/1e6:.2f}M</p>
-        </div>
-        """, unsafe_allow_html=True)
+        for _, row in top_risks.iterrows():
+            orig_rating = entity_analysis[entity_analysis['Customer'] == row['Customer']]['ESG_Score'].iloc[0]
+            border_color = risk_colors.get(orig_rating, '#58a6ff')
+            st.markdown(f"""
+            <div style="background:#161b22; padding:12px; border-radius:10px; border-left: 5px solid {border_color}; margin-bottom:10px;">
+                <p style="margin:0; font-weight:bold;">{row['Customer']}</p>
+                <p style="margin:0; font-size:18px; color:#58a6ff;">${row['Amount_Remaining']/1e6:.2f}M</p>
+            </div>
+            """, unsafe_allow_html=True)
 
 with tab_stress:
     st.subheader("Strategic Liquidity Stress Matrix (FX Volatility vs. Hedging)")
@@ -315,36 +298,20 @@ with cols[2]:
         st.toast("Executive Summary PDF generated and sent.")
 
 # --- 9. UI DOWNLOAD SECTION ---
-
 st.divider()
 st.subheader("📤 Export Intelligence")
 d_col1, d_col2 = st.columns(2)
 
 with d_col1:
-    # We use a unique key and ensure generate_pdf returns clean bytes
     try:
         pdf_bytes = generate_pdf(view_df, mode, net_collectible)
-        st.download_button(
-            label="📥 Download Executive PDF",
-            data=pdf_bytes,
-            file_name=f"SmartCash_Report_{mode}.pdf",
-            mime="application/pdf",
-            use_container_width=True,
-            key="pdf_download_btn"
-        )
+        st.download_button(label="📥 Download Executive PDF", data=pdf_bytes, file_name=f"SmartCash_Report_{mode}.pdf", mime="application/pdf", use_container_width=True, key="pdf_download_btn")
     except Exception as e:
         st.error("PDF Engine encountered a buffer error. Please refresh.")
 
 with d_col2:
     try:
         pptx_bytes = generate_pptx(view_df, mode, net_collectible)
-        st.download_button(
-            label="📊 Download Board PPTX",
-            data=pptx_bytes,
-            file_name=f"SmartCash_Deck_{mode}.pptx",
-            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            use_container_width=True,
-            key="pptx_download_btn"
-        )
+        st.download_button(label="📊 Download Board PPTX", data=pptx_bytes, file_name=f"SmartCash_Deck_{mode}.pptx", mime="application/vnd.openxmlformats-officedocument.presentationml.presentation", use_container_width=True, key="pptx_download_btn")
     except Exception as e:
         st.error("PPTX Engine encountered a buffer error.")
