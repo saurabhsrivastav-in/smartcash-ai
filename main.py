@@ -383,9 +383,12 @@ with t3:
                         st.rerun()
                 else: 
                     st.info("No active disputes.")
+      
+    # --- End of Workbench Tabs ---
         else:
             st.info("Workbench requires active ledger data.")
 
+# This 'elif' must be at the same indentation level as 'if menu == "📈 Dashboard":'
 elif menu == "📜 Audit":
     st.write("### 📜 System Audit Log")
     if st.session_state.audit:
