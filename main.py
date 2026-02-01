@@ -294,7 +294,7 @@ elif menu == "⚡ Workbench":
             st.markdown("### 📧 Professional Notice Draft")
             
             inv_id = inv.get('Invoice_ID', inv.get('Invoice', 'N/A')) # Safety check for name
-email_body = f"""Subject: URGENT: Payment Overdue for {inv['Customer']} ({inv_id})
+            email_body = f"""Subject: URGENT: Payment Overdue for {inv['Customer']} ({inv_id})
 
 Dear Accounts Payable Team,
 
