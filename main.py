@@ -199,34 +199,36 @@ else:
 
 st.divider()
 
-st.subheader("🔥 Interactive Stress Matrix (FX vs Hedge)")
-fx_range = np.array([-15, -10, -5, -2, 0, 5, 10])
-hedge_range = np.array([0, 25, 50, 75, 100])
-multiplier = 0.85 if stress_test else 1.0
-z_data = [[round(liq_pool * multiplier * (1 + (fx/100) * (1 - (h/100))), 2) for h in hedge_range] for fx in fx_range]
+# --- This block must be indented to stay inside the Dashboard menu ---
+        st.subheader("🔥 Interactive Stress Matrix (FX vs Hedge)")
+        fx_range = np.array([-15, -10, -5, -2, 0, 5, 10])
+        hedge_range = np.array([0, 25, 50, 75, 100])
+        multiplier = 0.85 if stress_test else 1.0
+        z_data = [[round(liq_pool * multiplier * (1 + (fx/100) * (1 - (h/100))), 2) for h in hedge_range] for fx in fx_range]
 
-fig_h = go.Figure(data=go.Heatmap(
-z=z_data, x=[f"{h}% Hedge" for h in hedge_range], y=[f"{fx}% Vol" for fx in fx_range],
-colorscale='RdYlGn', text=z_data, texttemplate="$%{text}M", hoverinfo="z"
-))
-fig_h.update_layout(template="plotly_dark", height=400, xaxis_title="Hedge Coverage", yaxis_title="FX Volatility (%)")
-st.plotly_chart(fig_h, use_container_width=True)
+        fig_h = go.Figure(data=go.Heatmap(
+            z=z_data, x=[f"{h}% Hedge" for h in hedge_range], y=[f"{fx}% Vol" for fx in fx_range],
+            colorscale='RdYlGn', text=z_data, texttemplate="$%{text}M", hoverinfo="z"
+        ))
+        fig_h.update_layout(template="plotly_dark", height=400, xaxis_title="Hedge Coverage", yaxis_title="FX Volatility (%)")
+        st.plotly_chart(fig_h, use_container_width=True)
 
+# --- Now the menu chain can continue correctly ---
 elif menu == "🛡️ Risk Radar":
     weights = {'AAA':0.05, 'AA':0.1, 'A':0.2, 'B':0.4, 'C':0.6, 'D':0.9}
     
-    # 1. Data Hardening: Ensure Path columns have no NaNs (Plotly fails on these)
+    # 1. Data Hardening: Ensure Path columns have no NaNs
     for col in ['Company_Code', 'Currency', 'ESG_Score', 'Customer']:
         view_df[col] = view_df[col].astype(str).replace('nan', 'Unknown')
     
-    # 2. Ensure Amount is strictly numeric and calculated correctly
+    # 2. Ensure Amount is strictly numeric
     view_df['Amount_Remaining'] = pd.to_numeric(view_df['Amount_Remaining'], errors='coerce').fillna(0)
     
     # 3. Calculate metrics
     view_df['Exposure'] = view_df['Amount_Remaining'] * view_df['ESG_Score'].map(weights).fillna(0)
     view_df['Amount_M'] = view_df['Amount_Remaining'] / 1_000_000
 
-    # 4. Create Sunburst with hover_data as a list for stable indexing
+    # 4. Create Sunburst
     fig_s = px.sunburst(
         view_df, 
         path=['Company_Code', 'Currency', 'ESG_Score', 'Customer'], 
@@ -236,12 +238,9 @@ elif menu == "🛡️ Risk Radar":
             'AAA':'#238636', 'AA':'#2ea043', 'A':'#d29922', 
             'B':'#db6d28', 'C':'#f85149', 'D':'#b62323'
         },
-        hover_data=['Amount_M'] # Amount_M becomes customdata[0]
+        hover_data=['Amount_M']
     )
     
-    # 5. Format Tooltip: Use :.4f to show decimals even for very small amounts
-    # %{label} is the segment name (Company/ESG/etc)
-    # %{customdata[0]} is the aggregated Millions
     fig_s.update_traces(
         hovertemplate="<b>%{label}</b><br>" + 
                       "Total Value: $%{customdata[0]:,.4f}M<br>" + 
@@ -269,6 +268,7 @@ elif menu == "⚡ Workbench":
             st.error("❌ Column mismatch: Ensure both files have a 'Customer' or 'Payer_Name' column.")
 
     with t2:
+        # Re-calculating 'ov' inside the tab scope to ensure it exists
         ov = view_df[view_df['Status'] == 'Overdue']
         if not ov.empty:
             target = st.selectbox("Select Debtor", ov['Customer'].unique())
@@ -332,8 +332,6 @@ Treasury Operations Team"""
             else: 
                 st.info("No active disputes.")
 
-# --- THE AUDIT BLOCK STARTS HERE ---
-# It MUST align with the original 'if menu ==' at the very top
 elif menu == "📜 Audit":
     st.write("### 📜 System Audit Log")
     if st.session_state.audit:
