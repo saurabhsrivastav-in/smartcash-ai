@@ -1,12 +1,19 @@
-name: Keep Streamlit Alive
+name: Keep SmartCash AI Awake
 on:
   schedule:
-    - cron: '0 */1 * * *' # Runs every 1 hours
-  workflow_dispatch:      # Allows you to run it manually
+    - cron: '0 */10 * * *' # Runs every 10 hours
+  workflow_dispatch:      # Allows you to trigger it manually
 
 jobs:
-  ping:
+  keep_awake:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: Ping App
-        run: curl -I https://smartcash-ai-csjcpzt5x3lbimlnuwbnvp.streamlit.app/
+      - uses: actions/checkout@v4
+      - name: Create Empty Commit
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git commit --allow-empty -m "Automated Heartbeat to prevent hibernation"
+          git push
